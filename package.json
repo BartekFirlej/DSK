@@ -1,0 +1,19 @@
+{
+  "name": "dsk",
+  "version": "1.0.0",
+  "description": "Project for school",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BartekFirlej/FaultTreeAnalysis.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BartekFirlej/FaultTreeAnalysis/issues"
+  },
+  "homepage": "https://github.com/BartekFirlej/FaultTreeAnalysis#readme"
+}
