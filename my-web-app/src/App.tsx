@@ -24,11 +24,11 @@ const App: React.FC = () => {
 
   const handleAddGate = (gateType: 'AND' | 'OR' | 'NOT') => {
     if (gateType === 'OR'){
-      const newGate = { id: `orGate${orGates.length + 1}`, position: { x: 200 + (orGates.length * 100), y: 500 } };
+      const newGate = { id: `orGate${orGates.length + 1}`, position: { x: 200 + (orGates.length * 100), y: 300 } };
       setOrGates([...orGates, newGate]);
     }
     else if(gateType === 'AND'){
-      const newGate = { id: `andGate${andGates.length + 1}`, position: { x: 100 + (andGates.length * 100), y: 400 } };
+      const newGate = { id: `andGate${andGates.length + 1}`, position: { x: 100 + (andGates.length * 100), y: 200 } };
       setAndGates([...andGates, newGate]);
     }
   };
@@ -44,7 +44,7 @@ const App: React.FC = () => {
   };
 
   const handleAddCondition = () => {
-    const newCondition = { id: `condition${conditions.length + 1}`, label: "New Condition", position: { x: 50 + (conditions.length * 150), y: 600 } };
+    const newCondition = { id: `condition${conditions.length + 1}`, label: "New Condition", position: { x: 50 + (conditions.length * 150), y: 200 } };
     setConditions([...conditions, newCondition]);
   };
   

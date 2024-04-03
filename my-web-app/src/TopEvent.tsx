@@ -1,4 +1,5 @@
 import React from 'react';
+import Draggable from './Draggable';
 
 interface TopEventProps {
   id: string; 
@@ -8,12 +9,14 @@ interface TopEventProps {
 
 const TopEvent: React.FC<TopEventProps> = ({ id, label, position }) => {
   return (
-    <svg x={position.x} y={position.y}>
-      <rect width="100" height="50" fill="red" />
-      <text x="50" y="25" alignmentBaseline="middle" textAnchor="middle" fill="white">
-        {label}
-      </text>
-    </svg>
+    <Draggable initialPosition={position}>
+        <svg x={position.x} y={position.y}>
+            <rect width="130" height="50" fill="red" stroke="black" strokeWidth="2"/>
+            <text x="65" y="25" alignmentBaseline="middle" textAnchor="middle" fill="white" fontWeight="bold">
+                {label}
+            </text>
+        </svg>
+    </Draggable>
   );
 };
 
