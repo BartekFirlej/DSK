@@ -9,7 +9,6 @@ interface DraggableProps {
 const Draggable: React.FC<DraggableProps> = ({ initialPosition, children, onDragEnd }) => {
   const [dragging, setDragging] = useState(false);
   const [position, setPosition] = useState(initialPosition);
-  const [positionUpdate, setPositionUpdate] = useState(initialPosition);
 
   const handleMouseDown = (e: React.MouseEvent<SVGElement>) => {
     setDragging(true);

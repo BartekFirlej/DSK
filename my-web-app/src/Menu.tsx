@@ -6,10 +6,9 @@ interface MenuProps {
   onAddBasicEvent: () => void;
   onAddExternalEvent: () => void;
   onAddCondition: () => void;
-  onAddConnection: () => void;
 }
 
-const Menu: React.FC<MenuProps> = ({ onAddTopEvent, onAddGate, onAddBasicEvent, onAddExternalEvent, onAddCondition, onAddConnection }) => {
+const Menu: React.FC<MenuProps> = ({ onAddTopEvent, onAddGate, onAddBasicEvent, onAddExternalEvent, onAddCondition }) => {
   return (
     <div>
       <button onClick={onAddTopEvent}>Add Top Event</button>
@@ -18,7 +17,6 @@ const Menu: React.FC<MenuProps> = ({ onAddTopEvent, onAddGate, onAddBasicEvent, 
       <button onClick={onAddBasicEvent}>Add Basic Event</button>
       <button onClick={onAddExternalEvent}>Add External Event</button>
       <button onClick={onAddCondition}>Add Condition</button>
-      <button onClick={onAddConnection}>Add Connection</button>
     </div>
   );
 };

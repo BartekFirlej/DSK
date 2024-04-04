@@ -7,17 +7,9 @@ import OrGate  from './OrGate';
 import AndGate from './AndGate';
 import Condition from './Condition';
 import Line, { LineProps, LineRef } from './Line';
-import { start } from 'repl';
 
 const App: React.FC = () => {
   const lineRef = useRef<LineRef>(null);
-
-  const [linePositions, setLinePositions] = useState<{ [key: string]: { start: { x: number; y: number }; end: { x: number; y: number } } }>({});
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [selectedParent, setSelectedParent] = useState(null);
-  const [selectedChild, setSelectedChild] = useState(null);
-
-
   const [topEvents, setTopEvents] = useState<Array<{ id: string; label: string; position: { x: number; y: number; } }>>([]);
   const [basicEvents, setBasicEvents] = useState<Array<{ id: string; label: string; position: { x: number; y: number } }>>([]);
   const [externalEvents, setExternalEvents] = useState<Array<{ id: string; label: string; position: { x: number; y: number } }>>([]);
@@ -39,7 +31,6 @@ const App: React.FC = () => {
       endPosition: { x: 200, y: 300 }
     }
   ]);
-  
   
   const handleAddTopEvent = () => {
     const newTopEvent = { id: "event" + (topEvents.length + 1), label: "System Failure", position: { x: 350, y: 50 + (topEvents.length * 60) } };
@@ -75,19 +66,33 @@ const App: React.FC = () => {
   var handleDragEnd = (id: string, newPosition: { x: number; y: number }) => {
     const updatedConnections = connections.map(connection => {
       if (connection.parent === id) {
-        // If the current connection's parent matches the dragged node, update startPosition
         return { ...connection, startPosition: newPosition };
       } else if (connection.child === id) {
-        // If the current connection's child matches the dragged node, update endPosition
         return { ...connection, endPosition: newPosition };
       } else {
-        // If the current connection does not involve the dragged node, leave it unchanged
         return connection;
       }
     });
   
-    // Update the connections state once with all changes
     setConnections(updatedConnections);
+    setTopEvents(prevEvents => prevEvents.map(event => 
+      event.id === id ? { ...event, position: newPosition } : event
+    ));
+    setBasicEvents(basicEvents => basicEvents.map(event => 
+      event.id === id ? { ...event, position: newPosition } : event
+    ));
+    setExternalEvents(externalEvents => externalEvents.map(event => 
+      event.id === id ? { ...event, position: newPosition } : event
+    ));
+    setOrGates(orGates => orGates.map(gate => 
+      gate.id === id ? { ...gate, position: newPosition } : gate
+    ));
+    setAndGates(andGates => andGates.map(gate => 
+      gate.id === id ? { ...gate, position: newPosition } : gate
+    ));
+    setConditions(conditions => conditions.map(condition => 
+      condition.id === id ? { ...condition, position: newPosition } : condition
+    ));
   };
   
   const getNodePositionById = (id: string) => {
@@ -100,87 +105,22 @@ const App: React.FC = () => {
       ...conditions,
     ];
     var element = allElements.find(element => element.id === id);
+    console.log(element)
     return element ? element.position : null;
   };
-
-  const handleAddConnection = () => {
-    /* startSelection();
-    if (!isSelecting) 
-      return; 
-    if (!selectedParent) {
-      setSelectedParent(nodeId);
-    } else if (selectedParent && !selectedChild && nodeId !== selectedParent) {
-      setSelectedChild(nodeId);
-      createConnection(selectedParent, nodeId);
-      setIsSelecting(false); 
-    }; */
-  }
-
-  const handleClick = (id: string) => {
-    console.log(id);
-  };
-
-  const getNodeById = (id: string) => {
-    const allElements = [
-      ...topEvents,
-      ...basicEvents,
-      ...externalEvents,
-      ...orGates,
-      ...andGates,
-      ...conditions,
-    ];
-    const element = allElements.find(element => element.id === id);
-    return element ? element : null;
-  };
-
-  const findConnectionsByNodeParentId = (id: string) => {
-    const relevantConnections = connections.filter(connection => 
-      connection.parent === id 
-    );
-    return relevantConnections;
-  };
-
-  const findConnectionsByNodeChildId = (id: string) => {
-    const relevantConnections = connections.filter(connection => 
-      connection.parent === id 
-    );
-    return relevantConnections;
-  };
-
-  let selectedElementId: string | null = null;
-
-  document.querySelectorAll('.element').forEach(item => {
-    item.addEventListener('click', event => {
-      const clickedElementId = (event.target as HTMLElement).getAttribute('data-id');
-      if (clickedElementId) {
-        handleElementClick(clickedElementId);
-      }
-    });
-  });
-  
-  function handleElementClick(clickedElementId: string): void {
-    if (!selectedElementId) {
-      selectedElementId = clickedElementId;
-      console.log(`Selected element: ${selectedElementId}`);
-    } else {
-      createConnection(selectedElementId, clickedElementId);
-      selectedElementId = null; 
-    }
-  }
   
   function canCreateConnection(fromId: string, toId: string): boolean {
     if (fromId === toId) {
       alert('Cannot create a connection to the same element.');
       return false;
     }
-  
     const exists = connections.some(conn => conn.parent === fromId && conn.child === toId || conn.parent === toId && conn.child === fromId);
     if (exists) {
       alert('Connection already exists.');
       return false;
     }
     return true;
-  }
+  };
   
   function createConnection(fromId: string, toId: string): void {
     if (canCreateConnection(fromId, toId)) {
@@ -206,11 +146,11 @@ const App: React.FC = () => {
  const [selectedElement2, setSelectedElement2] = useState('');
 
  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault(); // Prevent form submission from reloading the page
+  e.preventDefault(); 
   if (selectedElement1 && selectedElement2) {
     createConnection(selectedElement1, selectedElement2);
-    setSelectedElement1(''); // Reset selection
-    setSelectedElement2(''); // Reset selection
+    setSelectedElement1('');
+    setSelectedElement2('');
   } else {
     alert('Please select two elements to connect.');
   }
@@ -224,7 +164,6 @@ const App: React.FC = () => {
         onAddBasicEvent={handleAddBasicEvent}
         onAddExternalEvent={handleAddExternalEvent}
         onAddCondition={handleAddCondition}
-        onAddConnection={handleAddConnection}
       />
       <form onSubmit={handleSubmit}>
         <select value={selectedElement1} onChange={(e) => setSelectedElement1(e.target.value)}>
@@ -252,7 +191,6 @@ const App: React.FC = () => {
             <option key={element.id} value={element.id}>{element.id}</option>
           ))}
         </select>
-
         <button type="submit">Create Connection</button>
       </form>
       <h2>Fault Tree Analysis Diagram</h2>
@@ -286,7 +224,6 @@ const App: React.FC = () => {
             var parentPosition = getNodePositionById(connection.parent);
             var childPosition = getNodePositionById(connection.child);
             if (parentPosition && childPosition) {
-               console.log(`Rysuje ${parentPosition.x}, ${parentPosition.y}, ${childPosition.x}, ${childPosition.y}`);  
               return (
                   <svg>
                     <Line
