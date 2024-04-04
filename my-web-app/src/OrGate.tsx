@@ -4,13 +4,12 @@ import Draggable from './Draggable';
 interface OrGateProps {
   id: string;
   position: { x: number; y: number };
-  onDragEnd: (id: string, newPosition: { x: number; y: number }) => void; // Add this prop
+  onDragEnd: (id: string, newPosition: { x: number; y: number }) => void;
 }
 
-const OrGate: React.FC<OrGateProps> = ({ id, position, onDragEnd }) => {
+const OrGate: React.FC<OrGateProps> = ({ id, position, onDragEnd}) => {
     const handleDragEnd = (newPosition: { x: number; y: number }) => {
       onDragEnd(id, newPosition);
-      console.log('NOWA POZYCJa' + newPosition)
     };
     return (
         <Draggable initialPosition={position} onDragEnd={handleDragEnd}> {/* Pass onDragEnd prop */}

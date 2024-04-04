@@ -14,7 +14,6 @@ const Draggable: React.FC<DraggableProps> = ({ initialPosition, children, onDrag
   const handleMouseDown = (e: React.MouseEvent<SVGElement>) => {
     setDragging(true);
     e.preventDefault();
-    console.log('KLIKAM')
   };
 
   const handleMouseMove = (e: React.MouseEvent<SVGElement>) => {
@@ -25,9 +24,7 @@ const Draggable: React.FC<DraggableProps> = ({ initialPosition, children, onDrag
     };
     setPosition(newPosition);
     onDragEnd(newPosition);
-};
-
-
+  };
 
   const handleMouseUp = () => {
     if (!dragging) return;
@@ -40,7 +37,7 @@ const Draggable: React.FC<DraggableProps> = ({ initialPosition, children, onDrag
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      style={{ cursor: dragging ? 'grabbing' : 'grab' }}
+      style={{ cursor: dragging ? 'grabbing' : 'grab', overflow: 'visible' }}
     >
       {children}
     </svg>

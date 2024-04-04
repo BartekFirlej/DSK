@@ -6,12 +6,16 @@ import BasicEvent from './BasicEvent';
 import OrGate  from './OrGate';
 import AndGate from './AndGate';
 import Condition from './Condition';
-import Line, { LineRef } from './Line';
+import Line, { LineProps, LineRef } from './Line';
+import { start } from 'repl';
 
 const App: React.FC = () => {
   const lineRef = useRef<LineRef>(null);
 
   const [linePositions, setLinePositions] = useState<{ [key: string]: { start: { x: number; y: number }; end: { x: number; y: number } } }>({});
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectedParent, setSelectedParent] = useState(null);
+  const [selectedChild, setSelectedChild] = useState(null);
 
 
   const [topEvents, setTopEvents] = useState<Array<{ id: string; label: string; position: { x: number; y: number; } }>>([]);
@@ -69,45 +73,25 @@ const App: React.FC = () => {
   };
 
   var handleDragEnd = (id: string, newPosition: { x: number; y: number }) => {
-    console.log('NOWA POZYCJAAA x: ' + newPosition.x + ', y: ' + newPosition.y);
-    const updatedLinePositions = { ...linePositions };
-    console.log(connections);
-  
-    connections.forEach(connection => {
+    const updatedConnections = connections.map(connection => {
       if (connection.parent === id) {
-        console.log('Parent');
-        const updatedConnections = connections.map(c => {
-          if (c.id === connection.id) {
-            return { ...c, startPosition: newPosition };
-          } else {
-            return c;
-          }
-        });
-        setConnections(updatedConnections);
+        // If the current connection's parent matches the dragged node, update startPosition
+        return { ...connection, startPosition: newPosition };
       } else if (connection.child === id) {
-        console.log('Child');
-        const updatedConnections = connections.map(c => {
-          if (c.id === connection.id) {
-            return { ...c, endPosition: newPosition };
-          } else {
-            return c;
-          }
-        });
-        setConnections(updatedConnections);
+        // If the current connection's child matches the dragged node, update endPosition
+        return { ...connection, endPosition: newPosition };
+      } else {
+        // If the current connection does not involve the dragged node, leave it unchanged
+        return connection;
       }
     });
-  };
-
-
-
-  const updateLinePositions = () => {
-    if (lineRef.current) {
-      lineRef.current.update({ x: 10, y: 20 }, { x: 30, y: 40 });
-    }
+  
+    // Update the connections state once with all changes
+    setConnections(updatedConnections);
   };
   
   const getNodePositionById = (id: string) => {
-    const allElements = [
+    var allElements = [
       ...topEvents,
       ...basicEvents,
       ...externalEvents,
@@ -115,10 +99,25 @@ const App: React.FC = () => {
       ...andGates,
       ...conditions,
     ];
-  
-    const element = allElements.find(element => element.id === id);
-  
+    var element = allElements.find(element => element.id === id);
     return element ? element.position : null;
+  };
+
+  const handleAddConnection = () => {
+    /* startSelection();
+    if (!isSelecting) 
+      return; 
+    if (!selectedParent) {
+      setSelectedParent(nodeId);
+    } else if (selectedParent && !selectedChild && nodeId !== selectedParent) {
+      setSelectedChild(nodeId);
+      createConnection(selectedParent, nodeId);
+      setIsSelecting(false); 
+    }; */
+  }
+
+  const handleClick = (id: string) => {
+    console.log(id);
   };
 
   const getNodeById = (id: string) => {
@@ -130,9 +129,7 @@ const App: React.FC = () => {
       ...andGates,
       ...conditions,
     ];
-  
     const element = allElements.find(element => element.id === id);
-  
     return element ? element : null;
   };
 
@@ -150,6 +147,75 @@ const App: React.FC = () => {
     return relevantConnections;
   };
 
+  let selectedElementId: string | null = null;
+
+  document.querySelectorAll('.element').forEach(item => {
+    item.addEventListener('click', event => {
+      const clickedElementId = (event.target as HTMLElement).getAttribute('data-id');
+      if (clickedElementId) {
+        handleElementClick(clickedElementId);
+      }
+    });
+  });
+  
+  function handleElementClick(clickedElementId: string): void {
+    if (!selectedElementId) {
+      selectedElementId = clickedElementId;
+      console.log(`Selected element: ${selectedElementId}`);
+    } else {
+      createConnection(selectedElementId, clickedElementId);
+      selectedElementId = null; 
+    }
+  }
+  
+  function canCreateConnection(fromId: string, toId: string): boolean {
+    if (fromId === toId) {
+      alert('Cannot create a connection to the same element.');
+      return false;
+    }
+  
+    const exists = connections.some(conn => conn.parent === fromId && conn.child === toId || conn.parent === toId && conn.child === fromId);
+    if (exists) {
+      alert('Connection already exists.');
+      return false;
+    }
+    return true;
+  }
+  
+  function createConnection(fromId: string, toId: string): void {
+    if (canCreateConnection(fromId, toId)) {
+      const parentPosition = getNodePositionById(fromId);
+      const childPosition = getNodePositionById(toId);
+      if (parentPosition && childPosition) {
+      const newConnection: LineProps = {
+        id: `connection${connections.length + 1}`,
+        parent: fromId,
+        child: toId,
+        startPosition: parentPosition,
+        endPosition: childPosition
+      };
+      connections.push(newConnection);
+      console.log('Connection created:', newConnection);
+    } else {
+      console.log('Cannot create connection.');
+    }
+   }
+ }
+
+ const [selectedElement1, setSelectedElement1] = useState('');
+ const [selectedElement2, setSelectedElement2] = useState('');
+
+ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault(); // Prevent form submission from reloading the page
+  if (selectedElement1 && selectedElement2) {
+    createConnection(selectedElement1, selectedElement2);
+    setSelectedElement1(''); // Reset selection
+    setSelectedElement2(''); // Reset selection
+  } else {
+    alert('Please select two elements to connect.');
+  }
+};
+
   return (
     <div className="app-container">
       <Menu
@@ -158,7 +224,37 @@ const App: React.FC = () => {
         onAddBasicEvent={handleAddBasicEvent}
         onAddExternalEvent={handleAddExternalEvent}
         onAddCondition={handleAddCondition}
+        onAddConnection={handleAddConnection}
       />
+      <form onSubmit={handleSubmit}>
+        <select value={selectedElement1} onChange={(e) => setSelectedElement1(e.target.value)}>
+          <option value="">Select Element 1</option>
+          {[
+            ...topEvents,
+            ...basicEvents,
+            ...externalEvents,
+            ...orGates,
+            ...andGates,
+            ...conditions,
+          ].map((element) => (
+            <option key={element.id} value={element.id}>{element.id}</option>
+          ))}
+        </select>
+
+        <select value={selectedElement2} onChange={(e) => setSelectedElement2(e.target.value)}>
+          <option value="">Select Element 2</option>
+          {[...topEvents,
+            ...basicEvents,
+            ...externalEvents,
+            ...orGates,
+            ...andGates,
+            ...conditions].map((element) => (
+            <option key={element.id} value={element.id}>{element.id}</option>
+          ))}
+        </select>
+
+        <button type="submit">Create Connection</button>
+      </form>
       <h2>Fault Tree Analysis Diagram</h2>
       <div className="diagram-container"> {}
         <svg width="1600" height="800" style={{ border: '2px solid black' }}>
@@ -169,29 +265,28 @@ const App: React.FC = () => {
             </marker>
           </defs>
           {topEvents.map(event => (
-            <TopEvent key={event.id} id={event.id} label={event.label} position={event.position} onDragEnd={handleDragEnd}/>
+            <TopEvent key={event.id} id={event.id} label={event.label} position={event.position} onDragEnd={handleDragEnd} />
           ))}
           {basicEvents.map(event => (
-            <BasicEvent key={event.id} id={event.id} label={event.label} position={event.position} onDragEnd={handleDragEnd}/>
+            <BasicEvent key={event.id} id={event.id} label={event.label} position={event.position} onDragEnd={handleDragEnd} />
           ))}
           {externalEvents.map(event => (
-            <ExternalEvent key={event.id} id={event.id} label={event.label} position={event.position} onDragEnd={handleDragEnd}/>
+            <ExternalEvent key={event.id} id={event.id} label={event.label} position={event.position} onDragEnd={handleDragEnd} />
           ))}
           {orGates.map(gate => (
-            <OrGate key={gate.id} id={gate.id} position={gate.position} onDragEnd={handleDragEnd}/>
+            <OrGate key={gate.id} id={gate.id} position={gate.position} onDragEnd={handleDragEnd} />
           ))}
           {andGates.map(gate => (
-            <AndGate key={gate.id} id={gate.id} position={gate.position} onDragEnd={handleDragEnd}/>
+            <AndGate key={gate.id} id={gate.id} position={gate.position} onDragEnd={handleDragEnd} />
           ))}
           {conditions.map(condition => (
-            <Condition key={condition.id} {...condition} onDragEnd={handleDragEnd}/>
+            <Condition key={condition.id} {...condition} onDragEnd={handleDragEnd} />
           ))}
           {connections.map((connection) => {
-            const parentPosition = getNodePositionById(connection.parent);
-            const childPosition = getNodePositionById(connection.child);
+            var parentPosition = getNodePositionById(connection.parent);
+            var childPosition = getNodePositionById(connection.child);
             if (parentPosition && childPosition) {
-              console.log('RYSUJE LINIE')
-              console.log(connections)
+               console.log(`Rysuje ${parentPosition.x}, ${parentPosition.y}, ${childPosition.x}, ${childPosition.y}`);  
               return (
                   <svg>
                     <Line
@@ -204,15 +299,14 @@ const App: React.FC = () => {
                   />
                   </svg>
                 );
-            } else {
+             } else {
               console.warn(`Missing position for connection ${connection.id}`);
               return null;
-            }
+            } 
           })}
         </svg>
       </div>
     </div>
   );
 };
-
 export default App;

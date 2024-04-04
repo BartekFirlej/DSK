@@ -13,7 +13,7 @@ const AndGate: React.FC<AndGateProps> = ({ id, position, onDragEnd }) => {
   };
   return (
     <Draggable initialPosition={position}  onDragEnd={handleDragEnd}>
-        <svg x={position.x} y={position.y}>
+        <svg>
             <rect width="40" height="40" fill="lightgreen" stroke="black" strokeWidth="2"/>
             <text x="20" y="20" alignmentBaseline="middle" textAnchor="middle" fill="black" fontWeight="bold">
                 AND
