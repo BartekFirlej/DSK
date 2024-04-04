@@ -4,11 +4,12 @@ import Draggable from './Draggable';
 interface ExternalEventProps {
   id: string;
   label: string;
+  probability: number;
   position: { x: number; y: number };
   onDragEnd: (id: string, newPosition: { x: number; y: number }) => void;
 }
 
-const ExternalEvent: React.FC<ExternalEventProps> = ({ id, label, position, onDragEnd }) => {
+const ExternalEvent: React.FC<ExternalEventProps> = ({ id, label, probability, position, onDragEnd }) => {
     const handleDragEnd = (newPosition: { x: number; y: number }) => {
       onDragEnd(id, newPosition);
     };
@@ -25,7 +26,8 @@ const ExternalEvent: React.FC<ExternalEventProps> = ({ id, label, position, onDr
         <Draggable initialPosition={position} onDragEnd={handleDragEnd}>
             <rect x="10" y="10" width="60" height="60" fill="orange" transform="rotate(45, 40, 40)" stroke="black" strokeWidth="2"/>
             <text x="45" y="40" alignmentBaseline="middle" textAnchor="middle" fill="black" fontWeight="bold">
-                {label}
+              {label}
+              <tspan x="40" dy="20">{probability}</tspan>
             </text>
         </Draggable>
     );

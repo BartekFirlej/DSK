@@ -11,51 +11,54 @@ import Line, { LineProps, LineRef } from './Line';
 const App: React.FC = () => {
   const lineRef = useRef<LineRef>(null);
   const [topEvents, setTopEvents] = useState<Array<{ id: string; label: string; position: { x: number; y: number; } }>>([]);
-  const [basicEvents, setBasicEvents] = useState<Array<{ id: string; label: string; position: { x: number; y: number } }>>([]);
-  const [externalEvents, setExternalEvents] = useState<Array<{ id: string; label: string; position: { x: number; y: number } }>>([]);
-  const [orGates, setOrGates] = useState<Array<{ id: string; position: { x: number; y: number } }>>([]);
-  const [andGates, setAndGates] = useState<Array<{ id: string; position: { x: number; y: number } }>>([]);
+  const [basicEvents, setBasicEvents] = useState<Array<{ id: string; label: string; probability: number; position: { x: number; y: number } }>>([]);
+  const [externalEvents, setExternalEvents] = useState<Array<{ id: string; label: string; probability: number; position: { x: number; y: number } }>>([]);
+  const [orGates, setOrGates] = useState<Array<{ id: string; label: string; probability: number; position: { x: number; y: number } }>>([]);
+  const [andGates, setAndGates] = useState<Array<{ id: string; label: string; probability: number; position: { x: number; y: number } }>>([]);
   const [conditions, setConditions] = useState<Array<{ id: string; label: string; position: { x: number; y: number } }>>([]);
-  const [connections, setConnections] = useState<Array<{
-    id: string;
-    parent: string;
-    child: string;
-    startPosition: { x: number; y: number };
-    endPosition: { x: number; y: number };
-  }>>([
-    {
-      id: '1',
-      parent: 'event1',
-      child: 'orGate1',
-      startPosition: { x: 350, y: 50 },
-      endPosition: { x: 200, y: 300 }
-    }
-  ]);
+  const [connections, setConnections] = useState<Array<{ id: string; parent: string; child: string; startPosition: { x: number; y: number }; endPosition: { x: number; y: number };}>>([]);
+
+  const [name, setName] = useState('');
+  const [probability, setProbability] = useState(0);
   
   const handleAddTopEvent = () => {
-    const newTopEvent = { id: "event" + (topEvents.length + 1), label: "System Failure", position: { x: 350, y: 50 + (topEvents.length * 60) } };
-    setTopEvents([...topEvents, newTopEvent]);
+    if(name){
+      const newTopEvent = { id: "event" + (topEvents.length + 1), label: name, position: { x: 350, y: 50 + (topEvents.length * 60) } };
+      setTopEvents([...topEvents, newTopEvent]);
+    }
+    else{
+      alert('No name value.');
+    }
   };
 
   const handleAddGate = (gateType: 'AND' | 'OR' | 'NOT') => {
     if (gateType === 'OR'){
-      const newGate = { id: `orGate${orGates.length + 1}`, position: { x: 200 + (orGates.length * 100), y: 300 } };
+      const newGate = { id: `orGate${orGates.length + 1}`, label: `OR${orGates.length + 1}`, position: { x: 200 + (orGates.length * 100), y: 300 }, probability: 0 };
       setOrGates([...orGates, newGate]);
     }
     else if(gateType === 'AND'){
-      const newGate = { id: `andGate${andGates.length + 1}`, position: { x: 100 + (andGates.length * 100), y: 200 } };
+      const newGate = { id: `andGate${andGates.length + 1}`, label: `AND${andGates.length + 1}`, position: { x: 100 + (andGates.length * 100), y: 200 }, probability: 0 };
       setAndGates([...andGates, newGate]);
     }
   };
 
   const handleAddBasicEvent = () => {
-    const newEvent = { id: `basicEvent${basicEvents.length + 1}`, label: "Basic Event", position: { x: 150 + (basicEvents.length * 100), y: 200 } };
-    setBasicEvents([...basicEvents, newEvent]);
+    if(name && probability > 0 && probability <= 1){
+      const newEvent = { id: `basicEvent${basicEvents.length + 1}`, label: name, position: { x: 150 + (basicEvents.length * 100), y: 200 }, probability: probability };
+      setBasicEvents([...basicEvents, newEvent]);
+    }
+    else{
+      alert('No name or wrong probability value.');
+    }
   };
 
   const handleAddExternalEvent = () => {
-    const newEvent = { id: `externalEvent${externalEvents.length + 1}`, label: "External Event", position: { x: 100 + (externalEvents.length * 100), y: 300 } };
-    setExternalEvents([...externalEvents, newEvent]);
+    if(name && probability > 0 && probability <= 1){
+      const newEvent = { id: `externalEvent${externalEvents.length + 1}`, label: name, position: { x: 100 + (externalEvents.length * 100), y: 300 }, probability: probability };
+      setExternalEvents([...externalEvents, newEvent]);
+    }else{
+      alert('No name or wrong probability value.');
+    }
   };
 
   const handleAddCondition = () => {
@@ -158,6 +161,19 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
+      <input
+        type="text"
+        placeholder="Name"
+        value={name} 
+        onChange={(e) => setName(e.target.value)}
+      />
+
+      <input
+        type="number"
+        placeholder="Probability"
+        value={probability}
+        onChange={(e) => setProbability(Number(e.target.value))}
+      />
       <Menu
         onAddTopEvent={handleAddTopEvent}
         onAddGate={handleAddGate}
@@ -165,6 +181,7 @@ const App: React.FC = () => {
         onAddExternalEvent={handleAddExternalEvent}
         onAddCondition={handleAddCondition}
       />
+      
       <form onSubmit={handleSubmit}>
         <select value={selectedElement1} onChange={(e) => setSelectedElement1(e.target.value)}>
           <option value="">Select Element 1</option>
@@ -176,7 +193,7 @@ const App: React.FC = () => {
             ...andGates,
             ...conditions,
           ].map((element) => (
-            <option key={element.id} value={element.id}>{element.id}</option>
+            <option key={element.id} value={element.id}>{element.label}</option>
           ))}
         </select>
 
@@ -188,7 +205,7 @@ const App: React.FC = () => {
             ...orGates,
             ...andGates,
             ...conditions].map((element) => (
-            <option key={element.id} value={element.id}>{element.id}</option>
+            <option key={element.id} value={element.id}>{element.label}</option>
           ))}
         </select>
         <button type="submit">Create Connection</button>
@@ -206,16 +223,16 @@ const App: React.FC = () => {
             <TopEvent key={event.id} id={event.id} label={event.label} position={event.position} onDragEnd={handleDragEnd} />
           ))}
           {basicEvents.map(event => (
-            <BasicEvent key={event.id} id={event.id} label={event.label} position={event.position} onDragEnd={handleDragEnd} />
+            <BasicEvent key={event.id} id={event.id} label={event.label} probability={event.probability} position={event.position} onDragEnd={handleDragEnd} />
           ))}
           {externalEvents.map(event => (
-            <ExternalEvent key={event.id} id={event.id} label={event.label} position={event.position} onDragEnd={handleDragEnd} />
+            <ExternalEvent key={event.id} id={event.id} label={event.label} probability={event.probability} position={event.position} onDragEnd={handleDragEnd} />
           ))}
           {orGates.map(gate => (
-            <OrGate key={gate.id} id={gate.id} position={gate.position} onDragEnd={handleDragEnd} />
+            <OrGate key={gate.id} id={gate.id} label={gate.label} position={gate.position} probability={gate.probability} onDragEnd={handleDragEnd} />
           ))}
           {andGates.map(gate => (
-            <AndGate key={gate.id} id={gate.id} position={gate.position} onDragEnd={handleDragEnd} />
+            <AndGate key={gate.id} id={gate.id} label={gate.label} position={gate.position} probability={gate.probability} onDragEnd={handleDragEnd} />
           ))}
           {conditions.map(condition => (
             <Condition key={condition.id} {...condition} onDragEnd={handleDragEnd} />
