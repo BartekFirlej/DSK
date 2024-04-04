@@ -4,7 +4,8 @@
   "description": "Project for school",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -15,5 +16,13 @@
   "bugs": {
     "url": "https://github.com/BartekFirlej/FaultTreeAnalysis/issues"
   },
-  "homepage": "https://github.com/BartekFirlej/FaultTreeAnalysis#readme"
+  "homepage": "https://github.com/BartekFirlej/FaultTreeAnalysis#readme",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.74",
+    "@types/react-dom": "^18.2.23"
+  }
 }
