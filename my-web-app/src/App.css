@@ -7,6 +7,96 @@
   pointer-events: none;
 }
 
+/* Styles for buttons */
+button {
+  background-color: #808080; /* Gray background using hex */
+  color: white; /* White text */
+  padding: 10px 20px; /* Larger size */
+  border: none; /* No border */
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+  font-size: 16px; /* Larger font size */
+  font-weight: bold; /* Bold font */
+  margin: 5px; /* Spacing around the button */
+}
+
+button:hover {
+  background-color: #696969; /* Darker gray on hover using hex */
+}
+
+
+input[type="text"], input[type="number"], select {
+  background-color: #f0f0f0; /* Light gray background */
+  border: 1px solid #ddd; /* Subtle border */
+  border-radius: 5px; /* Rounded corners */
+  padding: 10px; /* Larger size */
+  font-size: 16px; /* Larger font size */
+  font-weight: bold; /* Bold font */
+  margin: 5px; /* Spacing around the element */
+  width: 25%; /* Set width */
+  -webkit-appearance: none; /* Remove default styling for WebKit browsers, applies to select */
+  -moz-appearance: none; /* Remove default styling for Firefox, applies to select */
+  appearance: none; /* Standard way to remove default styling, applies to select */
+  box-sizing: border-box; /* Include padding and border in the element's total width */
+}
+
+
+/* Styles for select elements */
+/* Styles for select elements */
+select {
+  background-color: #f0f0f0; /* Light gray background */
+  border: 1px solid #ddd; /* Subtle border */
+  border-radius: 5px; /* Rounded corners */
+  padding: 10px; /* Larger size */
+  font-size: 16px; /* Larger font size */
+  font-weight: bold; /* Bold font */
+  margin: 5px; /* Spacing around the select */
+  -webkit-appearance: none; /* Remove default styling for WebKit browsers */
+  -moz-appearance: none; /* Remove default styling for Firefox */
+  appearance: none; /* Standard way to remove default styling */
+  width: 25%; /* Increased width */
+}
+
+select:focus {
+  border-color: #aaa; /* Darker border on focus */
+  outline: none; /* Remove default focus outline */
+}
+
+
+/* Optionally, style the option elements */
+/* Note: Styling options directly is limited in many browsers */
+option {
+  background-color: #f0f0f0; /* Light gray background */
+  font-weight: bold; /* Bold font */
+}
+
+
+input[type="text"]:focus, input[type="number"]:focus {
+  border-color: #aaa; /* Darker border on focus */
+  outline: none; /* Remove default focus outline */
+}
+
+.panel {
+  border: 2px solid #ddd; /* Example: Light gray solid border */
+  padding: 20px; /* Example: Padding inside the panel */
+  margin: 15px; /* Example: Margin outside the panel, auto centers it horizontally */
+  width: 90%; /* Example: Set width, adjust as needed */
+  box-sizing: border-box; /* Ensures padding and border are included in the width */
+  background-color: #f9f9f9; /* Light background color for the panel */
+  border-radius: 10px; /* Rounded corners for the panel */
+}
+
+.diagram-container {
+  border: 2px solid #ddd; /* Example: Light gray solid border */
+  padding: 20px; /* Example: Padding inside the panel */
+  margin: 15px; /* Example: Margin outside the panel, auto centers it horizontally */
+  width: 90%; /* Example: Set width, adjust as needed */
+  box-sizing: border-box; /* Ensures padding and border are included in the width */
+  background-color: #f9f9f9; /* Light background color for the panel */
+  border-radius: 10px; /* Rounded corners for the panel */
+}
+
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
@@ -36,3 +126,6 @@
     transform: rotate(360deg);
   }
 }
+
+
+

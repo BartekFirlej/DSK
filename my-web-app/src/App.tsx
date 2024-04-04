@@ -8,6 +8,7 @@ import AndGate from './AndGate';
 import Condition from './Condition';
 import Line, { LineProps, LineRef } from './Line';
 import { convertToObject } from 'typescript';
+import './App.css';
 
 const App: React.FC = () => {
   const lineRef = useRef<LineRef>(null);
@@ -244,12 +245,31 @@ const App: React.FC = () => {
   );
   console.log(`Connection with ID: ${connectionId} has been deleted.`);
   calculateProbabilities();
-}
+  }
+
+  function deleteElement(elementId: string): void {
+    const isReferencedInConnections = connections.some(connection => 
+      connection.parent === elementId || connection.child === elementId
+    );
+  
+    if (isReferencedInConnections) {
+      alert(`Element with ID: ${elementId} is referenced in a connection and cannot be deleted.`);
+      return;
+    }
+
+    setTopEvents(prevEvents => prevEvents.filter(event => event.id !== elementId));
+    setBasicEvents(prevEvents => prevEvents.filter(event => event.id !== elementId));
+    setExternalEvents(prevEvents => prevEvents.filter(event => event.id !== elementId));
+    setOrGates(prevGates => prevGates.filter(gate => gate.id !== elementId));
+    setAndGates(prevGates => prevGates.filter(gate => gate.id !== elementId));
+    setConditions(prevConditions => prevConditions.filter(condition => condition.id !== elementId));
+  }
 
 
- const [selectedElement1, setSelectedElement1] = useState('');
- const [selectedElement2, setSelectedElement2] = useState('');
- const [selectedConnection, setSelectedConnection] = useState('');
+  const [selectedElement1, setSelectedElement1] = useState('');
+  const [selectedElement2, setSelectedElement2] = useState('');
+  const [selectedConnection, setSelectedConnection] = useState('');
+  const [selectedElement, setSelectedElement] = useState('');
 
   const handleCreateConnection = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); 
@@ -266,23 +286,25 @@ const App: React.FC = () => {
     e.preventDefault(); 
     if (selectedConnection) {
       deleteConnection(selectedConnection);
-      setSelectedElement1('');
-      setSelectedElement2('');
+      setSelectedConnection('');
     } else {
-      alert('Please select two elements to connect.');
+      alert('Please select connection to delete.');
     }
   };
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-        calculateProbabilities();
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-}, []);
+  const handleDeleteElement = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); 
+    if (selectedElement) {
+      deleteElement(selectedElement);
+      setSelectedElement1('');
+    } else {
+      alert('Please select element to delete.');
+    }
+  };
 
   return (
     <div className="app-container">
+      <div className="panel">
       <input
         type="text"
         placeholder="Name"
@@ -342,11 +364,27 @@ const App: React.FC = () => {
         </select>
 
         <button type="submit">Delete Connection</button>
-      </form>          
+      </form>    
 
+      <form onSubmit={handleDeleteElement}>
+        <select value={selectedConnection} onChange={(e) => setSelectedElement(e.target.value)}>
+        <option value="">Select Element</option>
+          {[...topEvents,
+            ...basicEvents,
+            ...externalEvents,
+            ...orGates,
+            ...andGates,
+            ...conditions].map((element) => (
+            <option key={element.id} value={element.id}>{element.label}</option>
+          ))}
+        </select>
+
+        <button type="submit">Delete Element</button>
+      </form>     
+      </div>    
+      <div className="diagram-container"> 
       <h2>Fault Tree Analysis Diagram</h2>
-      <div className="diagram-container"> {}
-        <svg width="1600" height="800" style={{ border: '2px solid black' }}>
+        <svg width="1800" height="800" style={{ border: '2px solid black' }}>
           <defs>
             <marker id="arrowhead" markerWidth="10" markerHeight="7" 
               refX="0" refY="3.5" orient="auto">
