@@ -1,4 +1,4 @@
-import React, { useState, useRef }  from 'react';
+import React, { useState, useRef, useEffect }  from 'react';
 import Menu from './Menu'; 
 import ExternalEvent from './ExternalEvent';
 import TopEvent from './TopEvent';
@@ -7,10 +7,11 @@ import OrGate  from './OrGate';
 import AndGate from './AndGate';
 import Condition from './Condition';
 import Line, { LineProps, LineRef } from './Line';
+import { convertToObject } from 'typescript';
 
 const App: React.FC = () => {
   const lineRef = useRef<LineRef>(null);
-  const [topEvents, setTopEvents] = useState<Array<{ id: string; label: string; position: { x: number; y: number; } }>>([]);
+  const [topEvents, setTopEvents] = useState<Array<{ id: string; label: string; probability: number; position: { x: number; y: number; } }>>([]);
   const [basicEvents, setBasicEvents] = useState<Array<{ id: string; label: string; probability: number; position: { x: number; y: number } }>>([]);
   const [externalEvents, setExternalEvents] = useState<Array<{ id: string; label: string; probability: number; position: { x: number; y: number } }>>([]);
   const [orGates, setOrGates] = useState<Array<{ id: string; label: string; probability: number; position: { x: number; y: number } }>>([]);
@@ -23,7 +24,7 @@ const App: React.FC = () => {
   
   const handleAddTopEvent = () => {
     if(name){
-      const newTopEvent = { id: "event" + (topEvents.length + 1), label: name, position: { x: 350, y: 50 + (topEvents.length * 60) } };
+      const newTopEvent = { id: "event" + (topEvents.length + 1), label: name, position: { x: 350, y: 50 + (topEvents.length * 60) }, probability: 0 };
       setTopEvents([...topEvents, newTopEvent]);
     }
     else{
@@ -108,8 +109,18 @@ const App: React.FC = () => {
       ...conditions,
     ];
     var element = allElements.find(element => element.id === id);
-    console.log(element)
     return element ? element.position : null;
+  };
+
+  const getNodeProbabilityById = (id: string) => {
+    var allElements = [
+      ...basicEvents,
+      ...externalEvents,
+      ...orGates,
+      ...andGates
+    ];
+    var element = allElements.find(element => element.id === id);
+    return element ? element.probability : 0;
   };
   
   function canCreateConnection(fromId: string, toId: string): boolean {
@@ -122,8 +133,89 @@ const App: React.FC = () => {
       alert('Connection already exists.');
       return false;
     }
+    const isFromIdTopEvent = topEvents.some(event => event.id === fromId);
+    if (isFromIdTopEvent) {
+        const isChildConnectionExists = connections.some(conn => conn.parent === fromId);
+        if (isChildConnectionExists) {
+            alert('A top event already has connection.');
+            return false;
+        }
+    }
+
+    const isChildTopEvent = topEvents.some(event => event.id === toId);
+    if (isChildTopEvent) {
+      alert('A top event cannot be a child in any connection.');
+      return false;
+    }
     return true;
   };
+
+  function calculateProbabilities() {
+    /* const updatedOrGates = orGates.map(gate => {
+      const childConnections = connections.filter(conn => conn.parent === gate.id);
+      const probability = 1 - childConnections.reduce((acc, conn) => {
+          const childProbability = getChildProbability(conn.child);
+          return acc * (1 - childProbability);
+      }, 1);
+      return { ...gate, probability };
+  });
+
+  const updatedAndGates = andGates.map(gate => {
+      const childConnections = connections.filter(conn => conn.parent === gate.id);
+      const probability = childConnections.reduce((acc, conn) => {
+          const childProbability = getChildProbability(conn.child);
+          return acc * childProbability; 
+      }, 1);
+      return { ...gate, probability };
+  });
+
+  const updatedTopEvents = topEvents.map(event => {
+      const childConnection = connections.find(connection => connection.parent === event.id);
+      if (childConnection) {
+          const probability = getNodeProbabilityById(childConnection.child);
+          return { ...event, probability };
+      }
+      return event;
+  });
+
+  // Update the state in bulk
+  setOrGates(updatedOrGates);
+  setAndGates(updatedAndGates);
+  setTopEvents(updatedTopEvents); */
+    setOrGates(orGates => orGates.map(gate => {
+      const childConnections = connections.filter(conn => conn.parent === gate.id);
+      const probability = 1 - childConnections.reduce((acc, conn) => {
+        const childProbability = getChildProbability(conn.child) || 0;
+        return acc * (1 - childProbability);
+      }, 1);
+      return { ...gate, probability };
+    }));
+
+    setAndGates(andGates => andGates.map(gate => {
+      const childConnections = connections.filter(conn => conn.parent === gate.id);
+      const probability = childConnections.reduce((acc, conn) => {
+        const childProbability = getChildProbability(conn.child) || 1;
+        return acc * childProbability; 
+      }, 1); 
+      return { ...gate, probability };
+    }));
+
+    setTopEvents(topEvents => topEvents.map(event => {
+      const childConnection = connections.find(connection => connection.parent === event.id);
+      if (childConnection) {
+        const probability = getNodeProbabilityById(childConnection.child) || 0; 
+        if(probability){
+          return { ...event, probability }; 
+        }
+      }
+      return event;
+    }));
+  }
+  
+  function getChildProbability(childId: string) {
+    const child = [...basicEvents, ...externalEvents, ...andGates, ...orGates].find(element => element.id === childId);
+    return child?.probability; 
+  }
   
   function createConnection(fromId: string, toId: string): void {
     if (canCreateConnection(fromId, toId)) {
@@ -139,25 +231,55 @@ const App: React.FC = () => {
       };
       connections.push(newConnection);
       console.log('Connection created:', newConnection);
+      calculateProbabilities();
     } else {
       console.log('Cannot create connection.');
     }
    }
  }
 
+ function deleteConnection(connectionId: string): void {
+  setConnections(prevConnections => 
+    prevConnections.filter(connection => connection.id !== connectionId)
+  );
+  console.log(`Connection with ID: ${connectionId} has been deleted.`);
+  calculateProbabilities();
+}
+
+
  const [selectedElement1, setSelectedElement1] = useState('');
  const [selectedElement2, setSelectedElement2] = useState('');
+ const [selectedConnection, setSelectedConnection] = useState('');
 
- const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault(); 
-  if (selectedElement1 && selectedElement2) {
-    createConnection(selectedElement1, selectedElement2);
-    setSelectedElement1('');
-    setSelectedElement2('');
-  } else {
-    alert('Please select two elements to connect.');
-  }
-};
+  const handleCreateConnection = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); 
+    if (selectedElement1 && selectedElement2) {
+      createConnection(selectedElement1, selectedElement2);
+      setSelectedElement1('');
+      setSelectedElement2('');
+    } else {
+      alert('Please select two elements to connect.');
+    } 
+  };
+
+  const handleDeleteConnection = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); 
+    if (selectedConnection) {
+      deleteConnection(selectedConnection);
+      setSelectedElement1('');
+      setSelectedElement2('');
+    } else {
+      alert('Please select two elements to connect.');
+    }
+  };
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+        calculateProbabilities();
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+}, []);
 
   return (
     <div className="app-container">
@@ -182,7 +304,7 @@ const App: React.FC = () => {
         onAddCondition={handleAddCondition}
       />
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleCreateConnection}>
         <select value={selectedElement1} onChange={(e) => setSelectedElement1(e.target.value)}>
           <option value="">Select Element 1</option>
           {[
@@ -210,6 +332,18 @@ const App: React.FC = () => {
         </select>
         <button type="submit">Create Connection</button>
       </form>
+
+      <form onSubmit={handleDeleteConnection}>
+        <select value={selectedConnection} onChange={(e) => setSelectedConnection(e.target.value)}>
+          <option value="">Select Connection </option>
+          {connections.map((connection) => (
+            <option key={connection.id} value={connection.id}>{connection.parent} {connection.child}</option>
+          ))}
+        </select>
+
+        <button type="submit">Delete Connection</button>
+      </form>          
+
       <h2>Fault Tree Analysis Diagram</h2>
       <div className="diagram-container"> {}
         <svg width="1600" height="800" style={{ border: '2px solid black' }}>
@@ -220,7 +354,7 @@ const App: React.FC = () => {
             </marker>
           </defs>
           {topEvents.map(event => (
-            <TopEvent key={event.id} id={event.id} label={event.label} position={event.position} onDragEnd={handleDragEnd} />
+            <TopEvent key={event.id} id={event.id} label={event.label} probability={event.probability} position={event.position} onDragEnd={handleDragEnd} />
           ))}
           {basicEvents.map(event => (
             <BasicEvent key={event.id} id={event.id} label={event.label} probability={event.probability} position={event.position} onDragEnd={handleDragEnd} />

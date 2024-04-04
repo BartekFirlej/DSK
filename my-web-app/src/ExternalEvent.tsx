@@ -1,5 +1,6 @@
 import React from 'react';
 import Draggable from './Draggable';
+import formatToExponential from './Format';
 
 interface ExternalEventProps {
   id: string;
@@ -25,9 +26,9 @@ const ExternalEvent: React.FC<ExternalEventProps> = ({ id, label, probability, p
     return (
         <Draggable initialPosition={position} onDragEnd={handleDragEnd}>
             <rect x="10" y="10" width="60" height="60" fill="orange" transform="rotate(45, 40, 40)" stroke="black" strokeWidth="2"/>
-            <text x="45" y="40" alignmentBaseline="middle" textAnchor="middle" fill="black" fontWeight="bold">
+            <text x="40" y="35" alignmentBaseline="middle" textAnchor="middle" fill="black" fontWeight="bold">
               {label}
-              <tspan x="40" dy="20">{probability}</tspan>
+              <tspan x="40" dy="20" fontSize={12}>{formatToExponential(probability)}</tspan>
             </text>
         </Draggable>
     );

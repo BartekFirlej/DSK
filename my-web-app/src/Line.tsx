@@ -15,7 +15,7 @@ export interface LineRef {
 const Line = forwardRef<LineRef, LineProps>(({ id, startPosition, endPosition, parent, child }, ref) => {
   return (
     <line
-      id={id.toString()} // Convert id to string and set it as the id attribute
+      id={id.toString()} 
       x1={startPosition.x}
       y1={startPosition.y}
       x2={endPosition.x}
