@@ -1,4 +1,4 @@
-import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useImperativeHandle, forwardRef } from "react";
 
 export interface LineProps {
   id: string;
@@ -9,21 +9,26 @@ export interface LineProps {
 }
 
 export interface LineRef {
-  update: (startPosition: { x: number; y: number }, endPosition: { x: number; y: number }) => void;
+  update: (
+    startPosition: { x: number; y: number },
+    endPosition: { x: number; y: number }
+  ) => void;
 }
 
-const Line = forwardRef<LineRef, LineProps>(({ id, startPosition, endPosition, parent, child }, ref) => {
-  return (
-    <line
-      id={id.toString()} // Convert id to string and set it as the id attribute
-      x1={startPosition.x}
-      y1={startPosition.y}
-      x2={endPosition.x}
-      y2={endPosition.y}
-      stroke="black"
-      strokeWidth="2"
-    />
-  );
-});
+const Line = forwardRef<LineRef, LineProps>(
+  ({ id, startPosition, endPosition, parent, child }, ref) => {
+    return (
+      <line
+        id={id.toString()}
+        x1={startPosition.x}
+        y1={startPosition.y}
+        x2={endPosition.x}
+        y2={endPosition.y}
+        stroke="black"
+        strokeWidth="2"
+      />
+    );
+  }
+);
 
 export default Line;

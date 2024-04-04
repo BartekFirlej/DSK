@@ -7,6 +7,86 @@
   pointer-events: none;
 }
 
+button {
+  background-color: #808080;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  margin: 5px;
+}
+
+button:hover {
+  background-color: #696969;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  margin: 5px;
+  width: 25%;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+}
+
+select {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  margin: 5px;
+  width: 25%;
+}
+
+select:focus {
+  border-color: #aaa;
+  outline: none;
+}
+
+option {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  border-color: #aaa;
+  outline: none;
+}
+
+.panel {
+  border: 2px solid #ddd;
+  padding: 20px;
+  margin: 15px;
+  width: 90%;
+  box-sizing: border-box;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+}
+
+.diagram-container {
+  border: 2px solid #ddd;
+  padding: 20px;
+  margin: 15px;
+  width: 90%;
+  box-sizing: border-box;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;

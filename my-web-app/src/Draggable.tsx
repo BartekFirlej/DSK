@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 interface DraggableProps {
   initialPosition: { x: number; y: number };
@@ -6,7 +6,11 @@ interface DraggableProps {
   onDragEnd: (newPosition: { x: number; y: number }) => void;
 }
 
-const Draggable: React.FC<DraggableProps> = ({ initialPosition, children, onDragEnd }) => {
+const Draggable: React.FC<DraggableProps> = ({
+  initialPosition,
+  children,
+  onDragEnd,
+}) => {
   const [dragging, setDragging] = useState(false);
   const [position, setPosition] = useState(initialPosition);
 
@@ -18,8 +22,8 @@ const Draggable: React.FC<DraggableProps> = ({ initialPosition, children, onDrag
   const handleMouseMove = (e: React.MouseEvent<SVGElement>) => {
     if (!dragging) return;
     const newPosition = {
-        x: position.x + e.movementX,
-        y: position.y + e.movementY,
+      x: position.x + e.movementX,
+      y: position.y + e.movementY,
     };
     setPosition(newPosition);
     onDragEnd(newPosition);
@@ -31,12 +35,14 @@ const Draggable: React.FC<DraggableProps> = ({ initialPosition, children, onDrag
   };
 
   return (
-    <svg x={position.x} y={position.y}
+    <svg
+      x={position.x}
+      y={position.y}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      style={{ cursor: dragging ? 'grabbing' : 'grab', overflow: 'visible' }}
+      style={{ cursor: dragging ? "grabbing" : "grab", overflow: "visible" }}
     >
       {children}
     </svg>
