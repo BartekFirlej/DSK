@@ -8,11 +8,13 @@ import AndGate from "./AndGate";
 import Condition from "./Condition";
 import Line, { LineProps, LineRef } from "./Line";
 import FTANode from "./FTANode";
+import Graph from "./Graph";
 import "./App.css";
 
 const App: React.FC = () => {
   const lineRef = useRef<LineRef>(null);
   const [allNodes, setAllNodes] = useState<FTANode[]>([]);
+  const allNodesMap: Map<string, FTANode> = new Map();
 
   const [connections, setConnections] = useState<
     Array<{
@@ -30,6 +32,12 @@ const App: React.FC = () => {
 
   const handleAddTopEvent = () => {
     if (name) {
+      const hasTopEvent = allNodes.some((node) => node.type === "topEvent");
+
+      if (hasTopEvent) {
+        alert("Istnieje węzeł typu topEvent.");
+        return;
+      }
       const newTopEvent = {
         id: "event" + (allNodes.length + 1),
         label: name,
@@ -207,9 +215,142 @@ const App: React.FC = () => {
     return maxPathLength;
   }
 
+  const findMCSForTopEvent = (): string[][] => {
+    const graph = new Map<string, string[]>();
+    connections.forEach(({ parent, child }) => {
+      if (!graph.has(parent)) {
+        graph.set(parent, []);
+      }
+      graph.get(parent)?.push(child);
+    });
+
+    const dfs = (nodeId: string): string[][] => {
+      const node = allNodes.find((node) => node.id === nodeId);
+      if (!node) {
+        return [];
+      }
+      if (node.type === "basicEvent") {
+        return [[node.label]];
+      }
+
+      const childrenIds = graph.get(nodeId) || [];
+      let mcsPaths: string[][] = [];
+
+      if (node.type === "andGate") {
+        mcsPaths = childrenIds.reduce<string[][]>((acc, childId, index) => {
+          const childMCS = dfs(childId);
+          return index === 0
+            ? childMCS
+            : acc.flatMap((accPath) =>
+                childMCS.map((path) => [...accPath, ...path])
+              );
+        }, []);
+      } else {
+        childrenIds.forEach((childId) => {
+          mcsPaths.push(...dfs(childId));
+        });
+      }
+
+      return mcsPaths;
+    };
+
+    const topEventNode = allNodes.find((node) => node.type === "topEvent");
+    if (!topEventNode) {
+      console.warn("No topEvent node found in the given allNodes array.");
+      return [];
+    }
+
+    return dfs(topEventNode.id);
+  };
+
+  const handleFindMCSForTopEvent = (): void => {
+    const mcsResults = findMCSForTopEvent();
+    const mcsResultsString = mcsResults
+      .map((path, index) => `${index + 1}: ${path.join(", ")}`)
+      .join("\n");
+    const mcsOutputElement = document.getElementById(
+      "MCS"
+    ) as HTMLTextAreaElement;
+    if (mcsOutputElement) {
+      mcsOutputElement.value = mcsResultsString;
+    }
+  };
+
+  const findFailurePaths = (): string[][] => {
+    const graph = new Map<string, string[]>();
+
+    connections.forEach(({ parent, child }) => {
+      if (!graph.has(parent)) {
+        graph.set(parent, []);
+      }
+      graph.get(parent)?.push(child);
+    });
+
+    const dfs = (nodeId: string, path: string[] = []): string[][] => {
+      const node = allNodes.find((n) => n.id === nodeId);
+      if (!node) return [];
+
+      // Tworzymy opis aktualnego węzła na potrzeby ścieżki
+      let nodeDescription =
+        node.type === "basicEvent" ? node.label : `${node.type}${node.id}`;
+
+      // Dołączamy opis węzła do ścieżki
+      const newPath = [...path, nodeDescription];
+
+      if (node.type === "basicEvent" || node.type ==="externalEvent") {
+        // Jeśli to zdarzenie bazowe, zwracamy ścieżkę zawierającą tylko ten węzeł
+        return [newPath];
+      }
+
+      const childrenIds = graph.get(nodeId) || [];
+      let paths: string[][] = [];
+
+      if (node.type === "andGate" || node.type === "orGate" || node.type === "topEvent") {
+        // Dla bramek AND i OR, kontynuujemy przeszukiwanie dla każdego dziecka
+        childrenIds.forEach((childId) => {
+          const childPaths = dfs(childId, newPath);
+          paths.push(...childPaths);
+        });
+
+        // Jeśli bramka nie ma dzieci, zwracamy aktualną ścieżkę
+        if (childrenIds.length === 0) {
+          return [newPath];
+        }
+      } else {
+        console.warn(`Unsupported node type: ${node.type}`);
+      }
+
+      return paths;
+    };
+
+    // Znajdowanie topEvent i rozpoczęcie przeszukiwania od jego dzieci
+    const topEventNode = allNodes.find((n) => n.type === "topEvent");
+    if (!topEventNode) {
+      console.warn("No topEvent node found in the given allNodes array.");
+      return [];
+    }
+
+    return dfs(topEventNode.id);
+  };
+
+  const handleFindFailurePaths = (): void => {
+    const failurePaths = findFailurePaths();
+    const outputElement = document.getElementById(
+      "MTS"
+    ) as HTMLTextAreaElement | null;
+    if (outputElement) {
+      console.log(failurePaths)
+      const formattedPaths = failurePaths
+        .map((path) => path.join(" -> "))
+        .join("\n");
+      outputElement.value = formattedPaths;
+    } else {
+      console.warn("Output element not found");
+    }
+  };
+
   function handleCalculateProbabilities() {
     var depth = findLongestPathLength();
-    console.log("DEPTH: " + depth);
     for (let i = 0; i < depth; i++) {
       setAllNodes((currentAllNodes) =>
         currentAllNodes.map((node) => {
@@ -287,39 +428,6 @@ const App: React.FC = () => {
     );
   }
 
-  const constructFTATree = () => {
-    const nodeMap = new Map<string, FTANode>(
-      allNodes.map((node) => [node.id, { ...node, children: [] }])
-    );
-
-    connections.forEach(({ parent, child }) => {
-      const parentNode = nodeMap.get(parent);
-      const childNode = nodeMap.get(child);
-      if (parentNode && childNode) {
-        parentNode.children = [...(parentNode.children || []), childNode];
-      }
-    });
-
-    const rootNodes = allNodes.filter(
-      (node) =>
-        node.type === "topEvent" &&
-        !connections.some(({ child }) => child === node.id)
-    );
-
-    rootNodes.forEach((root) => traverseTree(root));
-    return { nodeMap, rootNodes };
-  };
-
-  function traverseTree(node: FTANode): void {
-    console.log(allNodes);
-    // Perform the action on the current node
-    console.log(
-      `Visiting node ${node.id}: ${node.label}, Type: ${node.type}, Probability: ${node.probability}, Children: ${node.children}`
-    );
-
-    node.children?.forEach((child) => traverseTree(child));
-  }
-
   const [selectedElement1, setSelectedElement1] = useState("");
   const [selectedElement2, setSelectedElement2] = useState("");
   const [selectedConnection, setSelectedConnection] = useState("");
@@ -376,7 +484,6 @@ const App: React.FC = () => {
           onAddGate={handleAddGate}
           onAddBasicEvent={handleAddBasicEvent}
           onAddExternalEvent={handleAddExternalEvent}
-          onCalculateProbabilities={handleCalculateProbabilities}
         />
 
         <form onSubmit={handleCreateConnection}>
@@ -447,6 +554,16 @@ const App: React.FC = () => {
 
           <button type="submit">Delete Element</button>
         </form>
+
+        <button onClick={handleCalculateProbabilities}>
+          Calculate Probabilities
+        </button>
+
+        <button onClick={handleFindMCSForTopEvent}>Calculate MCS</button>
+
+        <button onClick={handleFindFailurePaths}>
+          Calculate Failure Paths
+        </button>
       </div>
       <div className="diagram-container">
         <h2>Fault Tree Analysis Diagram</h2>
@@ -561,6 +678,24 @@ const App: React.FC = () => {
             }
           })}
         </svg>
+      </div>
+      <div className="panel">
+        <h2>Minimal Cut Sets</h2>
+        <textarea
+          id="MCS"
+          rows={20}
+          cols={80}
+          placeholder="Enter text here..."
+        ></textarea>
+      </div>
+      <div className="panel">
+        <h2>Failure Paths</h2>
+        <textarea
+          id="MTS"
+          rows={20}
+          cols={80}
+          placeholder="Enter text here..."
+        ></textarea>
       </div>
     </div>
   );
