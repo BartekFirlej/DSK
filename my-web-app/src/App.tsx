@@ -36,6 +36,7 @@ const App: React.FC = () => {
         position: { x: 350, y: 50 + allNodes.length * 60 },
         probability: 0,
         type: "topEvent" as "topEvent",
+        children: [],
       };
       setAllNodes([...allNodes, newTopEvent]);
     } else {
@@ -51,6 +52,7 @@ const App: React.FC = () => {
         type: "orGate" as "orGate",
         position: { x: 200 + allNodes.length * 100, y: 300 },
         probability: 0,
+        children: [],
       };
       setAllNodes([...allNodes, newGate]);
     } else if (gateType === "AND") {
@@ -60,6 +62,7 @@ const App: React.FC = () => {
         type: "andGate" as "andGate",
         position: { x: 100 + allNodes.length * 100, y: 200 },
         probability: 0,
+        children: [],
       };
       setAllNodes([...allNodes, newGate]);
     }
@@ -73,6 +76,7 @@ const App: React.FC = () => {
         type: "basicEvent" as "basicEvent",
         position: { x: 150 + allNodes.length * 100, y: 200 },
         probability: probability,
+        children: [],
       };
       setAllNodes([...allNodes, newEvent]);
     } else {
@@ -88,23 +92,13 @@ const App: React.FC = () => {
         type: "externalEvent" as "externalEvent",
         position: { x: 100 + allNodes.length * 100, y: 300 },
         probability: probability,
+        children: [],
       };
       setAllNodes([...allNodes, newEvent]);
     } else {
       alert("No name or wrong probability value.");
     }
     console.log(allNodes);
-  };
-
-  const handleAddCondition = () => {
-    const newCondition = {
-      id: `condition${allNodes.length + 1}`,
-      label: "New Condition",
-      type: "condition" as "condition",
-      probability: 0,
-      position: { x: 50 + allNodes.length * 150, y: 200 },
-    };
-    setAllNodes([...allNodes, newCondition]);
   };
 
   var handleDragEnd = (id: string, newPosition: { x: number; y: number }) => {
@@ -117,33 +111,32 @@ const App: React.FC = () => {
         return connection;
       }
     });
-  
+
     setConnections(updatedConnections);
-  
+
     const updatedAllNodes = allNodes.map((event) =>
       event.id === id ? { ...event, position: newPosition } : event
     );
-  
+
     setAllNodes(updatedAllNodes);
   };
-  
 
   const getNodePositionById = (id: string) => {
     var element = allNodes.find((element) => element.id === id);
     return element ? element.position : null;
   };
 
-  const getNodeProbabilityById = (id: string) => {
-    var element = allNodes.find((element) => element.id === id);
-    return element ? element.probability : 0;
-  };
+  function getChildProbability(childId: string) {
+    const child = allNodes.find((element) => element.id === childId);
+    return child?.probability;
+  }
 
   function canCreateConnection(fromId: string, toId: string): boolean {
     if (fromId === toId) {
       alert("Cannot create a connection to the same element.");
       return false;
     }
-    
+
     const exists = connections.some(
       (conn) =>
         (conn.parent === fromId && conn.child === toId) ||
@@ -177,55 +170,75 @@ const App: React.FC = () => {
     return true;
   }
 
-  function calculateProbabilities() {
-    /* setOrGates((orGates) =>
-      orGates.map((gate) => {
-        const childConnections = connections.filter(
-          (conn) => conn.parent === gate.id
-        );
-        const probability =
-          1 -
-          childConnections.reduce((acc, conn) => {
-            const childProbability = getChildProbability(conn.child) || 0;
-            return acc * (1 - childProbability);
-          }, 1);
-        return { ...gate, probability };
-      })
-    );
+  function findLongestPathLength(): number {
+    const graph: { [parent: string]: string[] } = {};
+    connections.forEach(({ parent, child }) => {
+      if (graph[parent]) {
+        graph[parent].push(child);
+      } else {
+        graph[parent] = [child];
+      }
+    });
 
-    setAndGates((andGates) =>
-      andGates.map((gate) => {
-        const childConnections = connections.filter(
-          (conn) => conn.parent === gate.id
-        );
-        const probability = childConnections.reduce((acc, conn) => {
-          const childProbability = getChildProbability(conn.child) || 1;
-          return acc * childProbability;
-        }, 1);
-        return { ...gate, probability };
-      })
-    );
-
-    setTopEvents((topEvents) =>
-      topEvents.map((event) => {
-        const childConnection = connections.find(
-          (connection) => connection.parent === event.id
-        );
-        if (childConnection) {
-          const probability =
-            getNodeProbabilityById(childConnection.child) || 0;
-          if (probability) {
-            return { ...event, probability };
-          }
+    function dfs(
+      node: string,
+      visited: Set<string>,
+      currentLength: number
+    ): number {
+      visited.add(node);
+      let maxLength = currentLength;
+      const neighbors = graph[node] || [];
+      neighbors.forEach((neighbor) => {
+        if (!visited.has(neighbor)) {
+          maxLength = Math.max(
+            maxLength,
+            dfs(neighbor, new Set(visited), currentLength + 1)
+          );
         }
-        return event;
-      })
-    ); */
+      });
+      return maxLength;
+    }
+
+    let maxPathLength = 0;
+    Object.keys(graph).forEach((node) => {
+      maxPathLength = Math.max(maxPathLength, dfs(node, new Set<string>(), 1));
+    });
+
+    return maxPathLength;
   }
 
-  function getChildProbability(childId: string) {
-    const child = allNodes.find((element) => element.id === childId);
-    return child?.probability;
+  function handleCalculateProbabilities() {
+    var depth = findLongestPathLength();
+    console.log("DEPTH: " + depth);
+    for (let i = 0; i < depth; i++) {
+      setAllNodes((currentAllNodes) =>
+        currentAllNodes.map((node) => {
+          const childConnections = connections.filter(
+            (conn) => conn.parent === node.id
+          );
+          let probability = node.probability;
+          if (node.type === "orGate") {
+            probability =
+              1 -
+              childConnections.reduce((acc, conn) => {
+                const childProbability = getChildProbability(conn.child) || 0;
+                return acc * (1 - childProbability);
+              }, 1);
+          } else if (node.type === "andGate") {
+            probability = childConnections.reduce((acc, conn) => {
+              const childProbability = getChildProbability(conn.child) || 1;
+              return acc * childProbability;
+            }, 1);
+          } else if (node.type === "topEvent") {
+            const childConnection = childConnections[0];
+            if (childConnection) {
+              probability = getChildProbability(childConnection.child) || 0;
+            }
+          }
+          return { ...node, probability };
+        })
+      );
+    }
   }
 
   function createConnection(fromId: string, toId: string): void {
@@ -243,27 +256,6 @@ const App: React.FC = () => {
         setConnections([...connections, newConnection]);
         console.log("Connection created:", newConnection);
         console.log(allNodes);
-        calculateProbabilities();
-
-        /*const updatedTopEvents = allNodes.map((event) => {
-          if (event.id === fromId) {
-            const updatedChildren = event.children ? [...event.children] : [];
-            updatedChildren.push({
-              id: toId,
-              label: "", // You might want to find the child node to get its label and other properties
-              probability: 0, // Same here, get actual data from the child node
-              type: "", // Determine based on the child node
-              position: childPosition,
-              children: [], // Initially, children are likely to be empty
-            });
-            return { ...event, children: updatedChildren };
-          }
-          return event;
-        });
-
-        const { nodeMap, rootNodes } = constructFTATree();
-
-        rootNodes.forEach((root) => console.log("Root node ID:", root.id));*/
       } else {
         console.log("Cannot create connection.");
       }
@@ -275,7 +267,6 @@ const App: React.FC = () => {
       prevConnections.filter((connection) => connection.id !== connectionId)
     );
     console.log(`Connection with ID: ${connectionId} has been deleted.`);
-    calculateProbabilities();
   }
 
   function deleteElement(elementId: string): void {
@@ -291,26 +282,9 @@ const App: React.FC = () => {
       return;
     }
 
-    allNodes.filter((event) => event.id !== elementId);
-
-    /* setTopEvents((prevEvents) =>
-      prevEvents.filter((event) => event.id !== elementId)
+    setAllNodes((prevAllNodes) =>
+      prevAllNodes.filter((node) => node.id !== elementId)
     );
-    setBasicEvents((prevEvents) =>
-      prevEvents.filter((event) => event.id !== elementId)
-    );
-    setExternalEvents((prevEvents) =>
-      prevEvents.filter((event) => event.id !== elementId)
-    );
-    setOrGates((prevGates) =>
-      prevGates.filter((gate) => gate.id !== elementId)
-    );
-    setAndGates((prevGates) =>
-      prevGates.filter((gate) => gate.id !== elementId)
-    );
-    setConditions((prevConditions) =>
-      prevConditions.filter((condition) => condition.id !== elementId)
-    ); */
   }
 
   const constructFTATree = () => {
@@ -327,24 +301,24 @@ const App: React.FC = () => {
     });
 
     const rootNodes = allNodes.filter(
-      ({ id }) => !connections.some(({ child }) => child === id)
+      (node) =>
+        node.type === "topEvent" &&
+        !connections.some(({ child }) => child === node.id)
     );
+
     rootNodes.forEach((root) => traverseTree(root));
     return { nodeMap, rootNodes };
   };
 
-  // Recursive function to traverse the tree from a given node
   function traverseTree(node: FTANode): void {
+    console.log(allNodes);
     // Perform the action on the current node
-    //console.log(
-      //`Visiting node ${node.id}: ${node.label}, Type: ${node.type}, Probability: ${node.probability}, Children: ${node.children}`
-    //);
+    console.log(
+      `Visiting node ${node.id}: ${node.label}, Type: ${node.type}, Probability: ${node.probability}, Children: ${node.children}`
+    );
 
-    // Recursively visit each child node
     node.children?.forEach((child) => traverseTree(child));
   }
-
-  const { nodeMap, rootNodes } = constructFTATree();
 
   const [selectedElement1, setSelectedElement1] = useState("");
   const [selectedElement2, setSelectedElement2] = useState("");
@@ -402,7 +376,7 @@ const App: React.FC = () => {
           onAddGate={handleAddGate}
           onAddBasicEvent={handleAddBasicEvent}
           onAddExternalEvent={handleAddExternalEvent}
-          onAddCondition={handleAddCondition}
+          onCalculateProbabilities={handleCalculateProbabilities}
         />
 
         <form onSubmit={handleCreateConnection}>
@@ -446,8 +420,10 @@ const App: React.FC = () => {
             </option>
             {connections.map((connection) => (
               <option key={connection.id} value={connection.id}>
-              {allNodes.find(node => node.id === connection.parent)?.label} <p>---&gt;</p> {allNodes.find(node => node.id === connection.child)?.label}
-            </option>
+                {allNodes.find((node) => node.id === connection.parent)?.label}{" "}
+                <p>---&gt;</p>{" "}
+                {allNodes.find((node) => node.id === connection.child)?.label}
+              </option>
             ))}
           </select>
 
@@ -456,7 +432,7 @@ const App: React.FC = () => {
 
         <form onSubmit={handleDeleteElement}>
           <select
-            value={selectedConnection}
+            value={selectedElement}
             onChange={(e) => setSelectedElement(e.target.value)}
           >
             <option value="" disabled selected>
