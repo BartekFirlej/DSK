@@ -1,12 +1,9 @@
 import React from "react";
 import Draggable from "./Draggable";
 import formatToExponential from "./Format";
+import FTANode from "./FTANode";
 
-interface OrGateProps {
-  id: string;
-  label: string;
-  position: { x: number; y: number };
-  probability: number;
+interface OrGateProps extends FTANode {
   onDragEnd: (id: string, newPosition: { x: number; y: number }) => void;
 }
 
@@ -15,6 +12,7 @@ const OrGate: React.FC<OrGateProps> = ({
   position,
   probability,
   label,
+  type,
   onDragEnd,
 }) => {
   const handleDragEnd = (newPosition: { x: number; y: number }) => {

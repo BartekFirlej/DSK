@@ -7,54 +7,13 @@ import OrGate from "./OrGate";
 import AndGate from "./AndGate";
 import Condition from "./Condition";
 import Line, { LineProps, LineRef } from "./Line";
-import { convertToObject } from "typescript";
+import FTANode from "./FTANode";
 import "./App.css";
 
 const App: React.FC = () => {
   const lineRef = useRef<LineRef>(null);
-  const [topEvents, setTopEvents] = useState<
-    Array<{
-      id: string;
-      label: string;
-      probability: number;
-      position: { x: number; y: number };
-    }>
-  >([]);
-  const [basicEvents, setBasicEvents] = useState<
-    Array<{
-      id: string;
-      label: string;
-      probability: number;
-      position: { x: number; y: number };
-    }>
-  >([]);
-  const [externalEvents, setExternalEvents] = useState<
-    Array<{
-      id: string;
-      label: string;
-      probability: number;
-      position: { x: number; y: number };
-    }>
-  >([]);
-  const [orGates, setOrGates] = useState<
-    Array<{
-      id: string;
-      label: string;
-      probability: number;
-      position: { x: number; y: number };
-    }>
-  >([]);
-  const [andGates, setAndGates] = useState<
-    Array<{
-      id: string;
-      label: string;
-      probability: number;
-      position: { x: number; y: number };
-    }>
-  >([]);
-  const [conditions, setConditions] = useState<
-    Array<{ id: string; label: string; position: { x: number; y: number } }>
-  >([]);
+  const [allNodes, setAllNodes] = useState<FTANode[]>([]);
+
   const [connections, setConnections] = useState<
     Array<{
       id: string;
@@ -62,6 +21,7 @@ const App: React.FC = () => {
       child: string;
       startPosition: { x: number; y: number };
       endPosition: { x: number; y: number };
+      children?: FTANode[];
     }>
   >([]);
 
@@ -71,12 +31,13 @@ const App: React.FC = () => {
   const handleAddTopEvent = () => {
     if (name) {
       const newTopEvent = {
-        id: "event" + (topEvents.length + 1),
+        id: "event" + (allNodes.length + 1),
         label: name,
-        position: { x: 350, y: 50 + topEvents.length * 60 },
+        position: { x: 350, y: 50 + allNodes.length * 60 },
         probability: 0,
+        type: "topEvent" as "topEvent",
       };
-      setTopEvents([...topEvents, newTopEvent]);
+      setAllNodes([...allNodes, newTopEvent]);
     } else {
       alert("No name value.");
     }
@@ -85,32 +46,35 @@ const App: React.FC = () => {
   const handleAddGate = (gateType: "AND" | "OR" | "NOT") => {
     if (gateType === "OR") {
       const newGate = {
-        id: `orGate${orGates.length + 1}`,
-        label: `OR${orGates.length + 1}`,
-        position: { x: 200 + orGates.length * 100, y: 300 },
+        id: `orGate${allNodes.length + 1}`,
+        label: `OR${allNodes.length + 1}`,
+        type: "orGate" as "orGate",
+        position: { x: 200 + allNodes.length * 100, y: 300 },
         probability: 0,
       };
-      setOrGates([...orGates, newGate]);
+      setAllNodes([...allNodes, newGate]);
     } else if (gateType === "AND") {
       const newGate = {
-        id: `andGate${andGates.length + 1}`,
-        label: `AND${andGates.length + 1}`,
-        position: { x: 100 + andGates.length * 100, y: 200 },
+        id: `andGate${allNodes.length + 1}`,
+        label: `AND${allNodes.length + 1}`,
+        type: "andGate" as "andGate",
+        position: { x: 100 + allNodes.length * 100, y: 200 },
         probability: 0,
       };
-      setAndGates([...andGates, newGate]);
+      setAllNodes([...allNodes, newGate]);
     }
   };
 
   const handleAddBasicEvent = () => {
     if (name && probability > 0 && probability <= 1) {
       const newEvent = {
-        id: `basicEvent${basicEvents.length + 1}`,
+        id: `basicEvent${allNodes.length + 1}`,
         label: name,
-        position: { x: 150 + basicEvents.length * 100, y: 200 },
+        type: "basicEvent" as "basicEvent",
+        position: { x: 150 + allNodes.length * 100, y: 200 },
         probability: probability,
       };
-      setBasicEvents([...basicEvents, newEvent]);
+      setAllNodes([...allNodes, newEvent]);
     } else {
       alert("No name or wrong probability value.");
     }
@@ -119,24 +83,28 @@ const App: React.FC = () => {
   const handleAddExternalEvent = () => {
     if (name && probability > 0 && probability <= 1) {
       const newEvent = {
-        id: `externalEvent${externalEvents.length + 1}`,
+        id: `externalEvent${allNodes.length + 1}`,
         label: name,
-        position: { x: 100 + externalEvents.length * 100, y: 300 },
+        type: "externalEvent" as "externalEvent",
+        position: { x: 100 + allNodes.length * 100, y: 300 },
         probability: probability,
       };
-      setExternalEvents([...externalEvents, newEvent]);
+      setAllNodes([...allNodes, newEvent]);
     } else {
       alert("No name or wrong probability value.");
     }
+    console.log(allNodes);
   };
 
   const handleAddCondition = () => {
     const newCondition = {
-      id: `condition${conditions.length + 1}`,
+      id: `condition${allNodes.length + 1}`,
       label: "New Condition",
-      position: { x: 50 + conditions.length * 150, y: 200 },
+      type: "condition" as "condition",
+      probability: 0,
+      position: { x: 50 + allNodes.length * 150, y: 200 },
     };
-    setConditions([...conditions, newCondition]);
+    setAllNodes([...allNodes, newCondition]);
   };
 
   var handleDragEnd = (id: string, newPosition: { x: number; y: number }) => {
@@ -149,63 +117,24 @@ const App: React.FC = () => {
         return connection;
       }
     });
-
+  
     setConnections(updatedConnections);
-    setTopEvents((prevEvents) =>
-      prevEvents.map((event) =>
-        event.id === id ? { ...event, position: newPosition } : event
-      )
+  
+    const updatedAllNodes = allNodes.map((event) =>
+      event.id === id ? { ...event, position: newPosition } : event
     );
-    setBasicEvents((basicEvents) =>
-      basicEvents.map((event) =>
-        event.id === id ? { ...event, position: newPosition } : event
-      )
-    );
-    setExternalEvents((externalEvents) =>
-      externalEvents.map((event) =>
-        event.id === id ? { ...event, position: newPosition } : event
-      )
-    );
-    setOrGates((orGates) =>
-      orGates.map((gate) =>
-        gate.id === id ? { ...gate, position: newPosition } : gate
-      )
-    );
-    setAndGates((andGates) =>
-      andGates.map((gate) =>
-        gate.id === id ? { ...gate, position: newPosition } : gate
-      )
-    );
-    setConditions((conditions) =>
-      conditions.map((condition) =>
-        condition.id === id
-          ? { ...condition, position: newPosition }
-          : condition
-      )
-    );
+  
+    setAllNodes(updatedAllNodes);
   };
+  
 
   const getNodePositionById = (id: string) => {
-    var allElements = [
-      ...topEvents,
-      ...basicEvents,
-      ...externalEvents,
-      ...orGates,
-      ...andGates,
-      ...conditions,
-    ];
-    var element = allElements.find((element) => element.id === id);
+    var element = allNodes.find((element) => element.id === id);
     return element ? element.position : null;
   };
 
   const getNodeProbabilityById = (id: string) => {
-    var allElements = [
-      ...basicEvents,
-      ...externalEvents,
-      ...orGates,
-      ...andGates,
-    ];
-    var element = allElements.find((element) => element.id === id);
+    var element = allNodes.find((element) => element.id === id);
     return element ? element.probability : 0;
   };
 
@@ -214,6 +143,7 @@ const App: React.FC = () => {
       alert("Cannot create a connection to the same element.");
       return false;
     }
+    
     const exists = connections.some(
       (conn) =>
         (conn.parent === fromId && conn.child === toId) ||
@@ -223,8 +153,11 @@ const App: React.FC = () => {
       alert("Connection already exists.");
       return false;
     }
-    const isFromIdTopEvent = topEvents.some((event) => event.id === fromId);
-    if (isFromIdTopEvent) {
+
+    const topEventIds = allNodes
+      .filter((event) => event.type === "topEvent")
+      .map((event) => event.id);
+    if (topEventIds.includes(fromId)) {
       const isChildConnectionExists = connections.some(
         (conn) => conn.parent === fromId
       );
@@ -234,7 +167,9 @@ const App: React.FC = () => {
       }
     }
 
-    const isChildTopEvent = topEvents.some((event) => event.id === toId);
+    const isChildTopEvent = allNodes.some(
+      (event) => event.type == "topEvent" && event.id === toId
+    );
     if (isChildTopEvent) {
       alert("A top event cannot be a child in any connection.");
       return false;
@@ -243,7 +178,7 @@ const App: React.FC = () => {
   }
 
   function calculateProbabilities() {
-    setOrGates((orGates) =>
+    /* setOrGates((orGates) =>
       orGates.map((gate) => {
         const childConnections = connections.filter(
           (conn) => conn.parent === gate.id
@@ -285,16 +220,11 @@ const App: React.FC = () => {
         }
         return event;
       })
-    );
+    ); */
   }
 
   function getChildProbability(childId: string) {
-    const child = [
-      ...basicEvents,
-      ...externalEvents,
-      ...andGates,
-      ...orGates,
-    ].find((element) => element.id === childId);
+    const child = allNodes.find((element) => element.id === childId);
     return child?.probability;
   }
 
@@ -310,9 +240,30 @@ const App: React.FC = () => {
           startPosition: parentPosition,
           endPosition: childPosition,
         };
-        connections.push(newConnection);
+        setConnections([...connections, newConnection]);
         console.log("Connection created:", newConnection);
+        console.log(allNodes);
         calculateProbabilities();
+
+        /*const updatedTopEvents = allNodes.map((event) => {
+          if (event.id === fromId) {
+            const updatedChildren = event.children ? [...event.children] : [];
+            updatedChildren.push({
+              id: toId,
+              label: "", // You might want to find the child node to get its label and other properties
+              probability: 0, // Same here, get actual data from the child node
+              type: "", // Determine based on the child node
+              position: childPosition,
+              children: [], // Initially, children are likely to be empty
+            });
+            return { ...event, children: updatedChildren };
+          }
+          return event;
+        });
+
+        const { nodeMap, rootNodes } = constructFTATree();
+
+        rootNodes.forEach((root) => console.log("Root node ID:", root.id));*/
       } else {
         console.log("Cannot create connection.");
       }
@@ -340,7 +291,9 @@ const App: React.FC = () => {
       return;
     }
 
-    setTopEvents((prevEvents) =>
+    allNodes.filter((event) => event.id !== elementId);
+
+    /* setTopEvents((prevEvents) =>
       prevEvents.filter((event) => event.id !== elementId)
     );
     setBasicEvents((prevEvents) =>
@@ -357,8 +310,41 @@ const App: React.FC = () => {
     );
     setConditions((prevConditions) =>
       prevConditions.filter((condition) => condition.id !== elementId)
-    );
+    ); */
   }
+
+  const constructFTATree = () => {
+    const nodeMap = new Map<string, FTANode>(
+      allNodes.map((node) => [node.id, { ...node, children: [] }])
+    );
+
+    connections.forEach(({ parent, child }) => {
+      const parentNode = nodeMap.get(parent);
+      const childNode = nodeMap.get(child);
+      if (parentNode && childNode) {
+        parentNode.children = [...(parentNode.children || []), childNode];
+      }
+    });
+
+    const rootNodes = allNodes.filter(
+      ({ id }) => !connections.some(({ child }) => child === id)
+    );
+    rootNodes.forEach((root) => traverseTree(root));
+    return { nodeMap, rootNodes };
+  };
+
+  // Recursive function to traverse the tree from a given node
+  function traverseTree(node: FTANode): void {
+    // Perform the action on the current node
+    //console.log(
+      //`Visiting node ${node.id}: ${node.label}, Type: ${node.type}, Probability: ${node.probability}, Children: ${node.children}`
+    //);
+
+    // Recursively visit each child node
+    node.children?.forEach((child) => traverseTree(child));
+  }
+
+  const { nodeMap, rootNodes } = constructFTATree();
 
   const [selectedElement1, setSelectedElement1] = useState("");
   const [selectedElement2, setSelectedElement2] = useState("");
@@ -427,14 +413,7 @@ const App: React.FC = () => {
             <option value="" disabled selected>
               Select Element 1
             </option>
-            {[
-              ...topEvents,
-              ...basicEvents,
-              ...externalEvents,
-              ...orGates,
-              ...andGates,
-              ...conditions,
-            ].map((element) => (
+            {allNodes.map((element) => (
               <option key={element.id} value={element.id}>
                 {element.label}
               </option>
@@ -448,14 +427,7 @@ const App: React.FC = () => {
             <option value="" disabled selected>
               Select Element 2
             </option>
-            {[
-              ...topEvents,
-              ...basicEvents,
-              ...externalEvents,
-              ...orGates,
-              ...andGates,
-              ...conditions,
-            ].map((element) => (
+            {allNodes.map((element) => (
               <option key={element.id} value={element.id}>
                 {element.label}
               </option>
@@ -474,8 +446,8 @@ const App: React.FC = () => {
             </option>
             {connections.map((connection) => (
               <option key={connection.id} value={connection.id}>
-                {connection.parent} {connection.child}
-              </option>
+              {allNodes.find(node => node.id === connection.parent)?.label} <p>---&gt;</p> {allNodes.find(node => node.id === connection.child)?.label}
+            </option>
             ))}
           </select>
 
@@ -490,14 +462,7 @@ const App: React.FC = () => {
             <option value="" disabled selected>
               Select Element
             </option>
-            {[
-              ...topEvents,
-              ...basicEvents,
-              ...externalEvents,
-              ...orGates,
-              ...andGates,
-              ...conditions,
-            ].map((element) => (
+            {allNodes.map((element) => (
               <option key={element.id} value={element.id}>
                 {element.label}
               </option>
@@ -509,7 +474,7 @@ const App: React.FC = () => {
       </div>
       <div className="diagram-container">
         <h2>Fault Tree Analysis Diagram</h2>
-        <svg width="1800" height="800" style={{ border: "2px solid black" }}>
+        <svg width="99%" height="800" style={{ border: "2px solid black" }}>
           <defs>
             <marker
               id="arrowhead"
@@ -522,63 +487,82 @@ const App: React.FC = () => {
               <polygon points="0 0, 10 3.5, 0 7" fill="black" />
             </marker>
           </defs>
-          {topEvents.map((event) => (
-            <TopEvent
-              key={event.id}
-              id={event.id}
-              label={event.label}
-              probability={event.probability}
-              position={event.position}
-              onDragEnd={handleDragEnd}
-            />
-          ))}
-          {basicEvents.map((event) => (
-            <BasicEvent
-              key={event.id}
-              id={event.id}
-              label={event.label}
-              probability={event.probability}
-              position={event.position}
-              onDragEnd={handleDragEnd}
-            />
-          ))}
-          {externalEvents.map((event) => (
-            <ExternalEvent
-              key={event.id}
-              id={event.id}
-              label={event.label}
-              probability={event.probability}
-              position={event.position}
-              onDragEnd={handleDragEnd}
-            />
-          ))}
-          {orGates.map((gate) => (
-            <OrGate
-              key={gate.id}
-              id={gate.id}
-              label={gate.label}
-              position={gate.position}
-              probability={gate.probability}
-              onDragEnd={handleDragEnd}
-            />
-          ))}
-          {andGates.map((gate) => (
-            <AndGate
-              key={gate.id}
-              id={gate.id}
-              label={gate.label}
-              position={gate.position}
-              probability={gate.probability}
-              onDragEnd={handleDragEnd}
-            />
-          ))}
-          {conditions.map((condition) => (
-            <Condition
-              key={condition.id}
-              {...condition}
-              onDragEnd={handleDragEnd}
-            />
-          ))}
+          {allNodes.map((node) => {
+            switch (node.type) {
+              case "topEvent":
+                return (
+                  <TopEvent
+                    key={node.id}
+                    id={node.id}
+                    label={node.label}
+                    probability={node.probability}
+                    position={node.position}
+                    type={node.type}
+                    onDragEnd={handleDragEnd}
+                  />
+                );
+              case "basicEvent":
+                return (
+                  <BasicEvent
+                    key={node.id}
+                    id={node.id}
+                    label={node.label}
+                    probability={node.probability}
+                    position={node.position}
+                    type={node.type}
+                    onDragEnd={handleDragEnd}
+                  />
+                );
+              case "externalEvent":
+                return (
+                  <ExternalEvent
+                    key={node.id}
+                    id={node.id}
+                    label={node.label}
+                    probability={node.probability}
+                    position={node.position}
+                    type={node.type}
+                    onDragEnd={handleDragEnd}
+                  />
+                );
+              case "orGate":
+                return (
+                  <OrGate
+                    key={node.id}
+                    id={node.id}
+                    label={node.label}
+                    position={node.position}
+                    probability={node.probability}
+                    type={node.type}
+                    onDragEnd={handleDragEnd}
+                  />
+                );
+              case "andGate":
+                return (
+                  <AndGate
+                    key={node.id}
+                    id={node.id}
+                    label={node.label}
+                    position={node.position}
+                    probability={node.probability}
+                    type={node.type}
+                    onDragEnd={handleDragEnd}
+                  />
+                );
+              case "condition":
+                return (
+                  <Condition
+                    key={node.id}
+                    {...node}
+                    onDragEnd={handleDragEnd}
+                  />
+                );
+              default:
+                console.warn(`Unknown node type: ${node.type}`);
+                return null;
+            }
+          })}
+
           {connections.map((connection) => {
             var parentPosition = getNodePositionById(connection.parent);
             var childPosition = getNodePositionById(connection.child);

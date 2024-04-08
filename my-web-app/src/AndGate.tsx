@@ -1,12 +1,9 @@
 import React from "react";
 import Draggable from "./Draggable";
 import formatToExponential from "./Format";
+import FTANode from "./FTANode";
 
-interface AndGateProps {
-  id: string;
-  position: { x: number; y: number };
-  label: string;
-  probability: number;
+interface AndGateProps extends FTANode {
   onDragEnd: (id: string, newPosition: { x: number; y: number }) => void;
 }
 
@@ -15,6 +12,7 @@ const AndGate: React.FC<AndGateProps> = ({
   position,
   probability,
   label,
+  type,
   onDragEnd,
 }) => {
   const handleDragEnd = (newPosition: { x: number; y: number }) => {
