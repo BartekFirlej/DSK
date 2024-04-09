@@ -8,13 +8,12 @@ import AndGate from "./AndGate";
 import Condition from "./Condition";
 import Line, { LineProps, LineRef } from "./Line";
 import FTANode from "./FTANode";
-import Graph from "./Graph";
 import "./App.css";
 
 const App: React.FC = () => {
   const lineRef = useRef<LineRef>(null);
   const [allNodes, setAllNodes] = useState<FTANode[]>([]);
-  const allNodesMap: Map<string, FTANode> = new Map();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [connections, setConnections] = useState<
     Array<{
@@ -30,12 +29,13 @@ const App: React.FC = () => {
   const [name, setName] = useState("");
   const [probability, setProbability] = useState(0);
 
+
   const handleAddTopEvent = () => {
     if (name) {
       const hasTopEvent = allNodes.some((node) => node.type === "topEvent");
 
       if (hasTopEvent) {
-        alert("Istnieje węzeł typu topEvent.");
+        alert("TopEvent node exists.");
         return;
       }
       const newTopEvent = {
@@ -58,7 +58,7 @@ const App: React.FC = () => {
         id: `orGate${allNodes.length + 1}`,
         label: `OR${allNodes.length + 1}`,
         type: "orGate" as "orGate",
-        position: { x: 200 + allNodes.length * 100, y: 300 },
+        position: { x: 200 + allNodes.length * 10, y: 300 },
         probability: 0,
         children: [],
       };
@@ -68,7 +68,7 @@ const App: React.FC = () => {
         id: `andGate${allNodes.length + 1}`,
         label: `AND${allNodes.length + 1}`,
         type: "andGate" as "andGate",
-        position: { x: 100 + allNodes.length * 100, y: 200 },
+        position: { x: 100 + allNodes.length * 10, y: 200 },
         probability: 0,
         children: [],
       };
@@ -82,7 +82,7 @@ const App: React.FC = () => {
         id: `basicEvent${allNodes.length + 1}`,
         label: name,
         type: "basicEvent" as "basicEvent",
-        position: { x: 150 + allNodes.length * 100, y: 200 },
+        position: { x: 150 + allNodes.length * 10, y: 200 },
         probability: probability,
         children: [],
       };
@@ -98,7 +98,7 @@ const App: React.FC = () => {
         id: `externalEvent${allNodes.length + 1}`,
         label: name,
         type: "externalEvent" as "externalEvent",
-        position: { x: 100 + allNodes.length * 100, y: 300 },
+        position: { x: 100 + allNodes.length * 10, y: 300 },
         probability: probability,
         children: [],
       };
@@ -106,7 +106,6 @@ const App: React.FC = () => {
     } else {
       alert("No name or wrong probability value.");
     }
-    console.log(allNodes);
   };
 
   var handleDragEnd = (id: string, newPosition: { x: number; y: number }) => {
@@ -119,13 +118,10 @@ const App: React.FC = () => {
         return connection;
       }
     });
-
     setConnections(updatedConnections);
-
     const updatedAllNodes = allNodes.map((event) =>
       event.id === id ? { ...event, position: newPosition } : event
     );
-
     setAllNodes(updatedAllNodes);
   };
 
@@ -144,7 +140,6 @@ const App: React.FC = () => {
       alert("Cannot create a connection to the same element.");
       return false;
     }
-
     const exists = connections.some(
       (conn) =>
         (conn.parent === fromId && conn.child === toId) ||
@@ -154,7 +149,6 @@ const App: React.FC = () => {
       alert("Connection already exists.");
       return false;
     }
-
     const topEventIds = allNodes
       .filter((event) => event.type === "topEvent")
       .map((event) => event.id);
@@ -211,7 +205,6 @@ const App: React.FC = () => {
     Object.keys(graph).forEach((node) => {
       maxPathLength = Math.max(maxPathLength, dfs(node, new Set<string>(), 1));
     });
-
     return maxPathLength;
   }
 
@@ -223,19 +216,16 @@ const App: React.FC = () => {
       }
       graph.get(parent)?.push(child);
     });
-
     const dfs = (nodeId: string): string[][] => {
       const node = allNodes.find((node) => node.id === nodeId);
       if (!node) {
         return [];
       }
-      if (node.type === "basicEvent") {
+      if (node.type === "basicEvent" || node.type === "externalEvent") {
         return [[node.label]];
       }
-
       const childrenIds = graph.get(nodeId) || [];
       let mcsPaths: string[][] = [];
-
       if (node.type === "andGate") {
         mcsPaths = childrenIds.reduce<string[][]>((acc, childId, index) => {
           const childMCS = dfs(childId);
@@ -250,7 +240,6 @@ const App: React.FC = () => {
           mcsPaths.push(...dfs(childId));
         });
       }
-
       return mcsPaths;
     };
 
@@ -278,7 +267,6 @@ const App: React.FC = () => {
 
   const findFailurePaths = (): string[][] => {
     const graph = new Map<string, string[]>();
-
     connections.forEach(({ parent, child }) => {
       if (!graph.has(parent)) {
         graph.set(parent, []);
@@ -289,47 +277,40 @@ const App: React.FC = () => {
     const dfs = (nodeId: string, path: string[] = []): string[][] => {
       const node = allNodes.find((n) => n.id === nodeId);
       if (!node) return [];
-
-      // Tworzymy opis aktualnego węzła na potrzeby ścieżki
       let nodeDescription =
-        node.type === "basicEvent" ? node.label : `${node.type}${node.id}`;
-
-      // Dołączamy opis węzła do ścieżki
+        node.type === "basicEvent" ||
+        node.type === "externalEvent" ||
+        node.type === "topEvent"
+          ? node.label
+          : `${node.id}`;
       const newPath = [...path, nodeDescription];
-
-      if (node.type === "basicEvent" || node.type ==="externalEvent") {
-        // Jeśli to zdarzenie bazowe, zwracamy ścieżkę zawierającą tylko ten węzeł
+      if (node.type === "basicEvent" || node.type === "externalEvent") {
         return [newPath];
       }
-
       const childrenIds = graph.get(nodeId) || [];
       let paths: string[][] = [];
-
-      if (node.type === "andGate" || node.type === "orGate" || node.type === "topEvent") {
-        // Dla bramek AND i OR, kontynuujemy przeszukiwanie dla każdego dziecka
+      if (
+        node.type === "andGate" ||
+        node.type === "orGate" ||
+        node.type === "topEvent"
+      ) {
         childrenIds.forEach((childId) => {
           const childPaths = dfs(childId, newPath);
           paths.push(...childPaths);
         });
-
-        // Jeśli bramka nie ma dzieci, zwracamy aktualną ścieżkę
         if (childrenIds.length === 0) {
           return [newPath];
         }
       } else {
         console.warn(`Unsupported node type: ${node.type}`);
       }
-
       return paths;
     };
-
-    // Znajdowanie topEvent i rozpoczęcie przeszukiwania od jego dzieci
     const topEventNode = allNodes.find((n) => n.type === "topEvent");
     if (!topEventNode) {
       console.warn("No topEvent node found in the given allNodes array.");
       return [];
     }
-
     return dfs(topEventNode.id);
   };
 
@@ -339,9 +320,8 @@ const App: React.FC = () => {
       "MTS"
     ) as HTMLTextAreaElement | null;
     if (outputElement) {
-      console.log(failurePaths)
       const formattedPaths = failurePaths
-        .map((path) => path.join(" -> "))
+        .map((path, index) => `${index + 1}: ${path.reverse().join(" -> ")}`)
         .join("\n");
       outputElement.value = formattedPaths;
     } else {
@@ -395,10 +375,8 @@ const App: React.FC = () => {
           endPosition: childPosition,
         };
         setConnections([...connections, newConnection]);
-        console.log("Connection created:", newConnection);
-        console.log(allNodes);
       } else {
-        console.log("Cannot create connection.");
+        alert("Cannot create connection.");
       }
     }
   }
@@ -407,7 +385,6 @@ const App: React.FC = () => {
     setConnections((prevConnections) =>
       prevConnections.filter((connection) => connection.id !== connectionId)
     );
-    console.log(`Connection with ID: ${connectionId} has been deleted.`);
   }
 
   function deleteElement(elementId: string): void {
@@ -415,14 +392,12 @@ const App: React.FC = () => {
       (connection) =>
         connection.parent === elementId || connection.child === elementId
     );
-
     if (isReferencedInConnections) {
       alert(
         `Element with ID: ${elementId} is referenced in a connection and cannot be deleted.`
       );
       return;
     }
-
     setAllNodes((prevAllNodes) =>
       prevAllNodes.filter((node) => node.id !== elementId)
     );
@@ -464,9 +439,64 @@ const App: React.FC = () => {
     }
   };
 
+  const handleExportToFile = () => {
+    const dataToExport = {
+      allNodes: allNodes,
+      connections: connections,
+    };
+    const jsonString = JSON.stringify(dataToExport, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const currentDatetime = new Date()
+      .toISOString()
+      .replace(/:\d+\.\d+Z$/, "")
+      .replace(/T/, "_")
+      .replace(/:/g, "-");
+    link.download = `FTA_Tree_${currentDatetime}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFromFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files ? event.target.files[0] : null; 
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        const text = e.target?.result;
+        if (typeof text === "string") {
+          importData(text); 
+        }
+      };
+      reader.readAsText(file); 
+    }
+  };
+
+  const importData = (jsonString: string) => {
+    try {
+      const data = JSON.parse(jsonString);
+      if (data.allNodes && data.connections) {
+        setAllNodes(data.allNodes as FTANode[]);
+        setConnections(data.connections);
+      } else {
+        console.error("Invalid data structure in file");
+      }
+    } catch (error) {
+      console.error("Failed to parse the file", error);
+    }
+  };
+
+  const handleClick = () => {
+    fileInputRef.current?.click(); 
+  };
+
   return (
     <div className="app-container">
       <div className="panel">
+        <h2>Control Panel</h2>
         <input
           type="text"
           placeholder="Name"
@@ -564,6 +594,17 @@ const App: React.FC = () => {
         <button onClick={handleFindFailurePaths}>
           Calculate Failure Paths
         </button>
+
+        <button onClick={handleExportToFile}>Export Tree to File</button>
+
+        <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImportFromFile}
+        className="hidden-input"
+        style={{display: 'none'}}
+      />
+      <button onClick={handleClick}>Import Tree from File</button>
       </div>
       <div className="diagram-container">
         <h2>Fault Tree Analysis Diagram</h2>
@@ -685,7 +726,7 @@ const App: React.FC = () => {
           id="MCS"
           rows={20}
           cols={80}
-          placeholder="Enter text here..."
+          placeholder="Place for minimal cut sets result"
         ></textarea>
       </div>
       <div className="panel">
@@ -694,7 +735,7 @@ const App: React.FC = () => {
           id="MTS"
           rows={20}
           cols={80}
-          placeholder="Enter text here..."
+          placeholder="Place for failure paths result"
         ></textarea>
       </div>
     </div>
