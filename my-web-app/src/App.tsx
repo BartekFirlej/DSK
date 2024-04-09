@@ -29,9 +29,9 @@ const App: React.FC = () => {
   const [name, setName] = useState("");
   const [probability, setProbability] = useState(0);
 
-
   const handleAddTopEvent = () => {
     if (name) {
+      // There can be only one topEvent
       const hasTopEvent = allNodes.some((node) => node.type === "topEvent");
 
       if (hasTopEvent) {
@@ -52,7 +52,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAddGate = (gateType: "AND" | "OR" | "NOT") => {
+  const handleAddGate = (gateType: "AND" | "OR" ) => {
     if (gateType === "OR") {
       const newGate = {
         id: `orGate${allNodes.length + 1}`,
@@ -157,6 +157,7 @@ const App: React.FC = () => {
         (conn) => conn.parent === fromId
       );
       if (isChildConnectionExists) {
+        // There can be only one connection from topEvent
         alert("A top event already has connection.");
         return false;
       }
@@ -173,6 +174,7 @@ const App: React.FC = () => {
   }
 
   function findLongestPathLength(): number {
+    // Function finding tree depth to refresh probability for each layer
     const graph: { [parent: string]: string[] } = {};
     connections.forEach(({ parent, child }) => {
       if (graph[parent]) {
@@ -462,16 +464,30 @@ const App: React.FC = () => {
   };
 
   const handleImportFromFile = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files ? event.target.files[0] : null; 
+    const file = event.target.files ? event.target.files[0] : null;
     if (file) {
+      if (!file.name.endsWith(".json")) {
+        alert("Please select a JSON file.");
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e: ProgressEvent<FileReader>) => {
         const text = e.target?.result;
-        if (typeof text === "string") {
-          importData(text); 
+        try {
+          if (typeof text === "string") {
+            const data = JSON.parse(text);
+            importData(text);
+            alert("Tree imported successfully.");
+          }
+        } catch (error) {
+          alert(
+            "Import unsuccessful: The file is not properly formatted JSON."
+          );
         }
+        event.target.value = "";
       };
-      reader.readAsText(file); 
+      reader.readAsText(file);
     }
   };
 
@@ -490,7 +506,7 @@ const App: React.FC = () => {
   };
 
   const handleClick = () => {
-    fileInputRef.current?.click(); 
+    fileInputRef.current?.click();
   };
 
   return (
@@ -598,13 +614,13 @@ const App: React.FC = () => {
         <button onClick={handleExportToFile}>Export Tree to File</button>
 
         <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleImportFromFile}
-        className="hidden-input"
-        style={{display: 'none'}}
-      />
-      <button onClick={handleClick}>Import Tree from File</button>
+          type="file"
+          ref={fileInputRef}
+          onChange={handleImportFromFile}
+          className="hidden-input"
+          style={{ display: "none" }}
+        />
+        <button onClick={handleClick}>Import Tree from File</button>
       </div>
       <div className="diagram-container">
         <h2>Fault Tree Analysis Diagram</h2>
