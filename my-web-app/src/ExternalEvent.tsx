@@ -1,12 +1,9 @@
 import React from "react";
 import Draggable from "./Draggable";
 import formatToExponential from "./Format";
+import FTANode from "./FTANode";
 
-interface ExternalEventProps {
-  id: string;
-  label: string;
-  probability: number;
-  position: { x: number; y: number };
+interface ExternalEventProps extends FTANode{
   onDragEnd: (id: string, newPosition: { x: number; y: number }) => void;
 }
 

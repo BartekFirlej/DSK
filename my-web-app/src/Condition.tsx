@@ -1,10 +1,8 @@
 import React from "react";
 import Draggable from "./Draggable";
+import FTANode from "./FTANode";
 
-interface ConditionProps {
-  id: string;
-  label: string;
-  position: { x: number; y: number };
+interface ConditionProps extends FTANode{
   onDragEnd: (id: string, newPosition: { x: number; y: number }) => void;
 }
 
@@ -12,6 +10,7 @@ const Condition: React.FC<ConditionProps> = ({
   id,
   label,
   position,
+  type,
   onDragEnd,
 }) => {
   const handleDragEnd = (newPosition: { x: number; y: number }) => {

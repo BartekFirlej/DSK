@@ -70,6 +70,7 @@ input[type="number"]:focus {
 .panel {
   border: 2px solid #ddd;
   padding: 20px;
+  padding-top: 5px;
   margin: 15px;
   width: 90%;
   box-sizing: border-box;
@@ -80,6 +81,7 @@ input[type="number"]:focus {
 .diagram-container {
   border: 2px solid #ddd;
   padding: 20px;
+  padding-top: 5px;
   margin: 15px;
   width: 90%;
   box-sizing: border-box;
@@ -91,6 +93,14 @@ input[type="number"]:focus {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
   }
+}
+
+h2{
+  margin: 5px;
+}
+
+.hidden-input {
+  display: none;
 }
 
 .App-header {
